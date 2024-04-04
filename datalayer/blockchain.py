@@ -58,47 +58,76 @@ class Blockchain:
 
 
 
+    # @staticmethod
+    # def display(EVoting):
+    #     #--print the information of blocks of the blockchain in the console
+    #     try:
+    #         with open(PROJECT_PATH + '/applayer/temp/blockchain.dat','rb') as blockfile:
+    #             while True:
+    #                 try:
+    #                     data = pickle.load(blockfile)
+                
+    #                     #--print all data of a block
+    #                     print("Block Height: ", data.height)
+    #                     print("Data in block: ", data.votedata)
+    #                     print("Total in block: ", data.votecount)
+    #                     print("Number of votes: ",data.number_of_votes)
+    #                     print("Merkle root: ", data.merkle)
+    #                     print("Difficulty: ", data.DIFFICULTY)
+    #                     print("Time stamp: ", data.timeStamp)
+    #                     print("Previous hash: ", data.prevHash)
+    #                     print("Block Hash: ", data.hash)
+    #                     print("Nonce: ", data.nonce, '\n\t\t|\n\t\t|')
+    #                 except EOFError:
+    #                     break  # End of file reached
+    #     except FileNotFoundError:
+    #         print("\n.\n.\n.\n<<<File not found!!>>>")
     @staticmethod
     def display(EVoting):
-        #--print the information of blocks of the blockchain in the console
-        try:
-            with open(PROJECT_PATH + '/applayer/temp/blockchain.dat','rb') as blockfile:
-                while True:
-                    try:
-                        data = pickle.load(blockfile)
-
-                        #--print all data of a block
-                        print("Block Height: ", data.height)
-                        print("Data in block: ", data.votedata)
-                        print("Total in block: ", data.votecount)
-                        print("Number of votes: ",data.number_of_votes)
-                        print("Merkle root: ", data.merkle)
-                        print("Difficulty: ", data.DIFFICULTY)
-                        print("Time stamp: ", data.timeStamp)
-                        print("Previous hash: ", data.prevHash)
-                        print("Block Hash: ", data.hash)
-                        print("Nonce: ", data.nonce, '\n\t\t|\n\t\t|')
-                    except EOFError:
-                        break  # End of file reached
-        except FileNotFoundError:
-            print("\n.\n.\n.\n<<<File not found!!>>>")
+        for block in Blockchain.chain:
+            print("Block Height: ", block.height)
+            print("Data in block: ", block.votedata)
+            print("Total in block: ", block.votecount)
+            print("Number of votes: ", block.number_of_votes)
+            print("Merkle root: ", block.merkle)
+            print("Difficulty: ", block.DIFFICULTY)
+            print("Time stamp: ", block.timeStamp)
+            print("Previous hash: ", block.prevHash)
+            print("Block Hash: ", block.hash)
+            print("Nonce: ", block.nonce, '\n\t\t|\n\t\t|')
 
 
-    @staticmethod
     #--to clear up the votepool after a block has been mined...
     #如果文件不存在则创建新文件。'w+'模式表示可读写，如果文件已存在则清空文件内容
-    def update_votepool():
+    @staticmethod
+    def update_votepool(processed_votedata):
         try:
-            votefile = open('votefile.csv','w+')
-            votefile.close()
+            # Open and read the existing votes from the vote pool
+            with open(os.path.join(PROJECT_PATH, 'applayer', 'votefile.csv'), 'r', encoding='UTF-8') as file:
+                existing_votes = list(csv.reader(file))
+
+            # Convert each vote in processed_votedata to its CSV row format for comparison
+            processed_rows = [
+                [vote['Voter Public Key'].strip(), vote['Candidate'].strip(), vote['TimeStamp'].strip()]
+                for vote in processed_votedata
+            ]
+
+            # Strip whitespace from existing_votes for accurate comparison
+            existing_votes = [[item.strip() for item in row] for row in existing_votes]
+
+            # Filter out the processed votes from existing_votes
+            remaining_votes = [vote for vote in existing_votes if vote not in processed_rows]
+
+            # Write the unprocessed votes back to the vote pool
+            with open(os.path.join(PROJECT_PATH, 'applayer', 'votefile.csv'), 'w', newline='', encoding='UTF-8') as file:
+                csv.writer(file).writerows(remaining_votes)
 
         except Exception as e:
-            print("Some error occured: ", e)
-        return "Done"
+            print(f"Error updating votefile.csv: {e}")
 
     @staticmethod
     def is_votepool_empty():
-        my_path = PROJECT_PATH + '/temp/votefile.csv'
+        my_path = PROJECT_PATH + '/applayer/votefile.csv'
         # The file is considered empty if it doesn't exist or has no content
         return not os.path.isfile(my_path) or os.stat(my_path).st_size == 0
 
@@ -136,22 +165,62 @@ class Blockchain:
     @staticmethod
     def mine_if_needed():
         while True:
-            # Check conditions for mining a new block
-            if len(Blockchain.chain) == 1 or Blockchain.should_mine():
+            if Blockchain.should_mine():
                 print("Mining a new block...")
                 new_block = Block()
-                new_block.mineblock()  # Assumes mineblock() adds the block to the chain
-                
-            # Wait for a specified interval before checking again
+                new_block.mineblock()  # Assumes mineblock() will handle block creation and voting data loading
+
+                # Now the vote pool should be updated only if new_block actually contains votes
+                # if new_block.number_of_votes > 0:
+                #     Blockchain.update_votepool(new_block.votedata)
+
+            # Sleep to prevent continuous loop without pause unless you have a triggering event to mine
             time.sleep(BLOCK_TIME_LIMIT)
 
     @staticmethod
     def should_mine():
-        # Always mine until there are at least 4 blocks
-        if len(Blockchain.chain) < 4:
-            return True
-        # Beyond that, only mine if there are votes to process
-        return not Blockchain.is_votepool_empty()
+        total_votes = Blockchain.count_total_votes_in_pool()
+        
+        # Don't mine if there are no votes to process
+        if total_votes == 0:
+            return False
+
+        blocks_needed, votes_per_block = Blockchain.calculate_block_distribution(total_votes, max_votes_per_block=500)
+        
+        # Mine only if we need more blocks to accommodate the votes
+        return len(Blockchain.chain) < blocks_needed + 1  # +1 for genesis block
+        
+    @staticmethod
+    def count_total_votes_in_pool():
+        count = 0
+        try:
+            with open(PROJECT_PATH + '/applayer/votefile.csv', mode='r', encoding='UTF-8') as votepool:
+                csvreader = csv.reader(votepool)
+                count = sum(1 for row in csvreader)  # Sum the rows to get the total count
+        except (IOError, IndexError):
+            print("Error reading votefile.csv")
+        return count
+    
+    @staticmethod
+    def calculate_block_distribution(total_votes, max_votes_per_block=500):
+        # Set a minimum of 4 blocks
+        min_blocks = 4
+
+        # Calculate the number of additional blocks needed for excess votes
+        extra_blocks = max(0, (total_votes - min_blocks * max_votes_per_block + max_votes_per_block - 1) // max_votes_per_block)
+
+        # The total number of blocks needed is the sum of minimum blocks and extra blocks
+        blocks_needed = min_blocks + extra_blocks
+
+        # Determine the number of votes per block to distribute them as equally as possible
+        # If total votes are less than or equal to the capacity of 4 blocks, spread them evenly
+        if total_votes <= min_blocks * max_votes_per_block:
+            votes_per_block = (total_votes + min_blocks - 1) // min_blocks
+        else:
+            # Otherwise, use the maximum votes per block for the extra blocks
+            votes_per_block = max_votes_per_block
+
+        return blocks_needed, votes_per_block
     
 
 
@@ -212,37 +281,36 @@ class Block:
     #         print("Updating unconfirmed vote pool...")
     #         print (Blockchain.update_votepool())
     @staticmethod
-    def load_data():
+    def load_data(votes_per_block):
         votelist = []
-        votecount = []
+        votecount = {}
         count = 0
         try:
-            with open('votefile.csv', mode = 'r', encoding='UTF-8') as votepool:
+            with open('votefile.csv', mode='r', encoding='UTF-8') as votepool:
                 csvreader = csv.reader(votepool)
                 for row in csvreader:
-                    # votedata是一个字典，包含候选人的键和值
-                    # votelist.append({'Voter Public Key':row[0], 'Vote Data':row[1],'Key':row[2]})/
-                    votelist.append({'Voter Public Key':row[0], 'Candidate':row[1], 'TimeStamp':row[2]})
-                    candidate_exists = False
-                    candidate_name = row[1]
+                    if count >= votes_per_block:
+                        break  # Stop reading once the required number of votes is loaded
+
+                    voter_pub_key, candidate, timestamp = row
+                    votelist.append({'Voter Public Key': voter_pub_key, 'Candidate': candidate, 'TimeStamp': timestamp})
+                    
+                    # Count votes per candidate
+                    if candidate in votecount:
+                        votecount[candidate] += 1
+                    else:
+                        votecount[candidate] = 1
+
                     count += 1
-                    # if len(votelist) == 0:
-                    #     votecount.append({'Candidate':row[1], 'total':})
-                    for candidate in votecount:
-                        if candidate['Candidate'] == candidate_name:
-                            candidate['total'] += 1
-                            candidate_exists = True
-                            break
-                    if not candidate_exists:
-                        votecount.append({'Candidate': candidate_name, 'total': 1})
-                    # votecount的键为vote data的键，然后值加1
-        except(IOError,IndexError):
-            pass
+
+        except (IOError, IndexError) as e:
+            print("Error reading votefile.csv:", e)
 
         finally:
-            print("data loaded in block")
-            print("Updating unconfirmed vote pool...")
-            print (Blockchain.update_votepool())
+            print(f"{count} votes loaded in block")
+            if count > 0:
+                Blockchain.update_votepool(votelist)  # Ensure this updates the file correctly, removing only processed votes
+
         return votelist, votecount, count
 
     #--create a merkle tree of vote transactions and return the merkle root of the tree
@@ -251,12 +319,16 @@ class Block:
 
     #--fill the block with data and append the block in the blockchain
     def mineblock(self):
+        total_votes = Blockchain.count_total_votes_in_pool()
+        blocks_needed, votes_per_block = Blockchain.calculate_block_distribution(total_votes, max_votes_per_block=500)
+
         # Set the height and previous hash for the new block
         self.height = len(Blockchain.chain)
         self.prevHash = Blockchain.chain[-1].hash if self.height > 0 else '0'
 
         # Load vote data and count into the block
-        self.votedata, self.votecount, self.number_of_votes = Block.load_data()
+        self.votedata, self.votecount, self.number_of_votes = Block.load_data(votes_per_block)
+        Blockchain.update_votepool(self.votedata)
 
         # Calculate the Merkle root for the vote data (you'll need to implement this function)
         self.merkle = self.merkleRoot()
