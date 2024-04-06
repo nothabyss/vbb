@@ -12,7 +12,7 @@ BLOCK_TIME_LIMIT = 20
 
 def main():
     # --Blockchain initialized and Genesis block added
-    EVoting = Blockchain(b"\x02Ed\xc1\xe7\xe1", 1)
+    EVoting = Blockchain(b"\x02Ed\xc1\xe7\xe1", 1, 1000)
     Blockchain.display(EVoting)
 
 

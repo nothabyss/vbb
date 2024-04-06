@@ -41,15 +41,15 @@ class Blockchain:
     #     pickle._dump(adminpriv,adminkeyfile)
     #     pickle._dump(adminpub,adminkeyfile)
 
-    def __init__(self,vote_activity_id, initiator_puk):
-        self.add_genesis(vote_activity_id, initiator_puk)
+    def __init__(self,vote_activity_id, initiator_puk, max_nums):
+        self.add_genesis(vote_activity_id, initiator_puk, max_nums)
         print('Blockchain initialized')
 
 
     #--genesis block creation has nothing to do with blockchain class,
     #--..but has to be created when blockchain is initialized
-    def add_genesis(self, vote_activity_id, initiator_puk):
-        genesis = GenesisBlock(vote_activity_id, initiator_puk)
+    def add_genesis(self, vote_activity_id, initiator_puk, max_nums):
+        genesis = GenesisBlock(vote_activity_id, initiator_puk, max_nums)
         self.chain.append(genesis)
         #--genesis block created7/hain data file
         with open('temp/blockchain.dat', 'wb') as genfile:
@@ -352,11 +352,12 @@ class Block:
 
 
 class GenesisBlock(Block):
-    def __init__(self, vote_activity_id, initiator_puk, version = "v1.0"):
+    def __init__(self, vote_activity_id, initiator_puk, max_nums, version = "v1.0"):
         super().__init__()  # 调用父类的构造函数
         self.vote_activity_id = vote_activity_id
         self.initiator_puk = initiator_puk
         self.version = version
+        self.max_nums = max_nums
         self.hash = self.calcHash()
         self.timeStamp = time.time()
     def calcHash(self):
