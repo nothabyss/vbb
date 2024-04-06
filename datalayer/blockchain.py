@@ -23,7 +23,7 @@ BLOCK_TIME_LIMIT = 20
 #--path of project files
 PROJECT_PATH = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 votefile_path = os.path.join(PROJECT_PATH, 'applayer', 'votefile.csv')
-
+maxb = 0 
 
 
 
@@ -50,6 +50,8 @@ class Blockchain:
     #--..but has to be created when blockchain is initialized
     def add_genesis(self, vote_activity_id, initiator_puk, max_nums):
         genesis = GenesisBlock(vote_activity_id, initiator_puk, max_nums)
+        global maxb
+        maxb = max_nums
         self.chain.append(genesis)
         #--genesis block created7/hain data file
         with open('applayer/temp/blockchain.dat', 'wb') as genfile:
@@ -82,7 +84,7 @@ class Blockchain:
     #                     break  # End of file reached
     #     except FileNotFoundError:
     #         print("\n.\n.\n.\n<<<File not found!!>>>")
-    @staticmethod
+    
     def display(EVoting):
         for block in Blockchain.chain:
             print("Block Height: ", block.height)
@@ -99,7 +101,7 @@ class Blockchain:
 
     #--to clear up the votepool after a block has been mined...
     #如果文件不存在则创建新文件。'w+'模式表示可读写，如果文件已存在则清空文件内容
-    @staticmethod
+    
     def update_votepool(processed_votedata):
         try:
             
@@ -127,7 +129,7 @@ class Blockchain:
         except Exception as e:
             print(f"Error updating votefile.csv: {e}")
 
-    @staticmethod
+    
     def is_votepool_empty():
         my_path = votefile_path
         # The file is considered empty if it doesn't exist or has no content
@@ -164,7 +166,7 @@ class Blockchain:
         return True
     
 
-    @staticmethod
+    
     def mine_if_needed():
         while True:
             if Blockchain.should_mine():
@@ -187,7 +189,7 @@ class Blockchain:
                 print("No mining needed at this time.")
                 
                     
-    @staticmethod
+    
     def should_mine():
         total_votes = Blockchain.count_total_votes_in_pool()
         blocks_needed, _ = Blockchain.calculate_block_distribution(total_votes)
@@ -195,7 +197,7 @@ class Blockchain:
         # Check if there are enough votes to mine and if the blockchain doesn't already have the necessary blocks
         return total_votes > 0 and (len(Blockchain.chain) - 1 < blocks_needed)
         
-    @staticmethod
+    
     def count_total_votes_in_pool():
         count = 0
         try:
@@ -206,14 +208,13 @@ class Blockchain:
             print("Error reading votefile.csv")
         return count
     
-    @staticmethod
-    def calculate_block_distribution(total_votes, max_votes_per_block=500):
+    
+    def calculate_block_distribution(total_votes):
         min_blocks = 4
         blocks_needed = min_blocks
-
-        if total_votes > min_blocks * max_votes_per_block:
-            votes_per_block = max_votes_per_block
-            extra_blocks = math.ceil((total_votes - min_blocks * max_votes_per_block) / votes_per_block)
+        if total_votes > min_blocks * maxb:
+            votes_per_block = maxb
+            extra_blocks = math.ceil((total_votes - min_blocks * maxb) / votes_per_block)
             blocks_needed += extra_blocks
         else:
             votes_per_block = math.ceil(total_votes / min_blocks)
