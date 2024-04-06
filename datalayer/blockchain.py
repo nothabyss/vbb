@@ -176,7 +176,10 @@ class Blockchain:
                 #     Blockchain.update_votepool(new_block.votedata)
 
             # Sleep to prevent continuous loop without pause unless you have a triggering event to mine
-            time.sleep(BLOCK_TIME_LIMIT)
+            else:
+                time.sleep(BLOCK_TIME_LIMIT)
+                print("no vote update")
+              
 
     @staticmethod
     def should_mine():
