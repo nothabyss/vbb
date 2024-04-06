@@ -20,9 +20,8 @@ DIFFICULTY = 2
 BLOCK_TIME_LIMIT = 20
 
 #--path of project files
-current_file_path = os.path.abspath(__file__)
-current_dir_path = os.path.dirname(current_file_path)
-PROJECT_PATH = os.path.dirname(current_dir_path)
+PROJECT_PATH = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+votefile_path = os.path.join(PROJECT_PATH, 'applayer', 'votefile.csv')
 
 
 
@@ -52,7 +51,7 @@ class Blockchain:
         genesis = GenesisBlock(vote_activity_id, initiator_puk, max_nums)
         self.chain.append(genesis)
         #--genesis block created7/hain data file
-        with open('temp/blockchain.dat', 'wb') as genfile:
+        with open('applayer/temp/blockchain.dat', 'wb') as genfile:
             pickle.dump(genesis, genfile)
         print("Genesis block added")
 
@@ -102,8 +101,9 @@ class Blockchain:
     @staticmethod
     def update_votepool(processed_votedata):
         try:
+            
             # Open and read the existing votes from the vote pool
-            with open(os.path.join(PROJECT_PATH, 'applayer', 'votefile.csv'), 'r', encoding='UTF-8') as file:
+            with open(votefile_path, 'r', newline='', encoding='UTF-8') as file:
                 existing_votes = list(csv.reader(file))
 
             # Convert each vote in processed_votedata to its CSV row format for comparison
@@ -119,7 +119,8 @@ class Blockchain:
             remaining_votes = [vote for vote in existing_votes if vote not in processed_rows]
 
             # Write the unprocessed votes back to the vote pool
-            with open(os.path.join(PROJECT_PATH, 'applayer', 'votefile.csv'), 'w', newline='', encoding='UTF-8') as file:
+            with open(votefile_path, 'w', newline='', encoding='UTF-8') as file:
+                
                 csv.writer(file).writerows(remaining_votes)
 
         except Exception as e:
@@ -127,7 +128,7 @@ class Blockchain:
 
     @staticmethod
     def is_votepool_empty():
-        my_path = PROJECT_PATH + '/applayer/votefile.csv'
+        my_path = votefile_path
         # The file is considered empty if it doesn't exist or has no content
         return not os.path.isfile(my_path) or os.stat(my_path).st_size == 0
 
@@ -194,7 +195,7 @@ class Blockchain:
     def count_total_votes_in_pool():
         count = 0
         try:
-            with open(PROJECT_PATH + '/applayer/votefile.csv', mode='r', encoding='UTF-8') as votepool:
+            with open(votefile_path, 'r', newline='', encoding='UTF-8') as votepool:
                 csvreader = csv.reader(votepool)
                 count = sum(1 for row in csvreader)  # Sum the rows to get the total count
         except (IOError, IndexError):
@@ -286,7 +287,7 @@ class Block:
         votecount = {}
         count = 0
         try:
-            with open('votefile.csv', mode='r', encoding='UTF-8') as votepool:
+            with open(votefile_path, 'r', newline='', encoding='UTF-8') as votepool:
                 csvreader = csv.reader(votepool)
                 for row in csvreader:
                     if count >= votes_per_block:
