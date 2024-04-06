@@ -15,9 +15,6 @@ def main():
     EVoting = Blockchain(b"\x02Ed\xc1\xe7\xe1", 1, 1000)
     Blockchain.display(EVoting)
 
-
-
-    print(EVoting)
     return
 
 

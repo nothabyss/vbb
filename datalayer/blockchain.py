@@ -5,6 +5,7 @@ from threading import Thread
 import csv
 import pickle
 import os
+import math
 
 
 #--project files
@@ -167,32 +168,32 @@ class Blockchain:
     def mine_if_needed():
         while True:
             if Blockchain.should_mine():
-                print("Mining a new block...")
-                new_block = Block()
-                new_block.mineblock()  # Assumes mineblock() will handle block creation and voting data loading
+                total_votes = Blockchain.count_total_votes_in_pool()
+                blocks_to_mine, _ = Blockchain.calculate_block_distribution(total_votes)
 
-                # Now the vote pool should be updated only if new_block actually contains votes
-                # if new_block.number_of_votes > 0:
-                #     Blockchain.update_votepool(new_block.votedata)
+                while total_votes > 0 and blocks_to_mine > 0:
+                    votes_per_block = math.ceil(total_votes / blocks_to_mine)
+                    print(f"Mining a block with {votes_per_block} votes...")
 
-            # Sleep to prevent continuous loop without pause unless you have a triggering event to mine
+                    new_block = Block()
+                    new_block.mineblock(votes_per_block)
+
+                    total_votes = Blockchain.count_total_votes_in_pool()  # Update the total votes after mining a block
+                    blocks_to_mine -= 1  # Decrement the number of blocks to mine
+
+                    print(f"Block mined. {total_votes} votes remaining, {blocks_to_mine} blocks to mine.")
             else:
                 time.sleep(BLOCK_TIME_LIMIT)
-                print("no vote update")
-              
-
+                print("No mining needed at this time.")
+                
+                    
     @staticmethod
     def should_mine():
         total_votes = Blockchain.count_total_votes_in_pool()
-        
-        # Don't mine if there are no votes to process
-        if total_votes == 0:
-            return False
+        blocks_needed, _ = Blockchain.calculate_block_distribution(total_votes)
 
-        blocks_needed, votes_per_block = Blockchain.calculate_block_distribution(total_votes, max_votes_per_block=500)
-        
-        # Mine only if we need more blocks to accommodate the votes
-        return len(Blockchain.chain) < blocks_needed + 1  # +1 for genesis block
+        # Check if there are enough votes to mine and if the blockchain doesn't already have the necessary blocks
+        return total_votes > 0 and (len(Blockchain.chain) - 1 < blocks_needed)
         
     @staticmethod
     def count_total_votes_in_pool():
@@ -207,26 +208,17 @@ class Blockchain:
     
     @staticmethod
     def calculate_block_distribution(total_votes, max_votes_per_block=500):
-        # Set a minimum of 4 blocks
         min_blocks = 4
+        blocks_needed = min_blocks
 
-        # Calculate the number of additional blocks needed for excess votes
-        extra_blocks = max(0, (total_votes - min_blocks * max_votes_per_block + max_votes_per_block - 1) // max_votes_per_block)
-
-        # The total number of blocks needed is the sum of minimum blocks and extra blocks
-        blocks_needed = min_blocks + extra_blocks
-
-        # Determine the number of votes per block to distribute them as equally as possible
-        # If total votes are less than or equal to the capacity of 4 blocks, spread them evenly
-        if total_votes <= min_blocks * max_votes_per_block:
-            votes_per_block = (total_votes + min_blocks - 1) // min_blocks
-        else:
-            # Otherwise, use the maximum votes per block for the extra blocks
+        if total_votes > min_blocks * max_votes_per_block:
             votes_per_block = max_votes_per_block
+            extra_blocks = math.ceil((total_votes - min_blocks * max_votes_per_block) / votes_per_block)
+            blocks_needed += extra_blocks
+        else:
+            votes_per_block = math.ceil(total_votes / min_blocks)
 
         return blocks_needed, votes_per_block
-    
-
 
 class Block:
 
@@ -311,7 +303,6 @@ class Block:
             print("Error reading votefile.csv:", e)
 
         finally:
-            print(f"{count} votes loaded in block")
             if count > 0:
                 Blockchain.update_votepool(votelist)  # Ensure this updates the file correctly, removing only processed votes
 
@@ -321,20 +312,20 @@ class Block:
     def merkleRoot(self):
         return 'congrats'
 
-    #--fill the block with data and append the block in the blockchain
-    def mineblock(self):
-        total_votes = Blockchain.count_total_votes_in_pool()
-        blocks_needed, votes_per_block = Blockchain.calculate_block_distribution(total_votes, max_votes_per_block=500)
+    def mineblock(self, votes_per_block):
+        # Assume that the total votes and blocks needed are already calculated
 
         # Set the height and previous hash for the new block
         self.height = len(Blockchain.chain)
         self.prevHash = Blockchain.chain[-1].hash if self.height > 0 else '0'
 
-        # Load vote data and count into the block
+        # Load vote data and count into the block based on votes_per_block
         self.votedata, self.votecount, self.number_of_votes = Block.load_data(votes_per_block)
+
+        # Update the vote pool by removing the votes that are now loaded into the block
         Blockchain.update_votepool(self.votedata)
 
-        # Calculate the Merkle root for the vote data (you'll need to implement this function)
+        # Calculate the Merkle root for the vote data (implement this function if necessary)
         self.merkle = self.merkleRoot()
 
         # Set the block's difficulty and timestamp
@@ -347,11 +338,11 @@ class Block:
         # Calculate the block's hash with the nonce found
         self.hash = self.calcHash()
 
-        # Append the mined block to the blockchain
+
         Blockchain.chain.append(self)
-
-        Blockchain.display(self)
-
+        if Blockchain.count_total_votes_in_pool() == 0:
+            Blockchain.display(self)
+        # Append the mined block to the blockchain
         return self  # Return the mined block
 
 
