@@ -4,6 +4,7 @@ import time
 from threading import Thread
 import csv
 import pickle
+import sys
 import os
 import math
 
@@ -11,6 +12,7 @@ import math
 #--project files
 from . import enc
 from prolayer import verification as ver
+
 
 #--<<Global variables>>
 
@@ -22,6 +24,10 @@ BLOCK_TIME_LIMIT = 20
 
 #--path of project files
 PROJECT_PATH = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append(PROJECT_PATH)
+
+from votetest import append_random_votes
+
 votefile_path = os.path.join(PROJECT_PATH, 'applayer', 'votefile.csv')
 maxb = 0 
 
@@ -186,6 +192,7 @@ class Blockchain:
                     print(f"Block mined. {total_votes} votes remaining, {blocks_to_mine} blocks to mine.")
             else:
                 time.sleep(BLOCK_TIME_LIMIT)
+                append_random_votes(votefile_path, num_votes=10)
                 print("No mining needed at this time.")
                 
                     
@@ -195,7 +202,7 @@ class Blockchain:
         blocks_needed, _ = Blockchain.calculate_block_distribution(total_votes)
 
         # Check if there are enough votes to mine and if the blockchain doesn't already have the necessary blocks
-        return total_votes > 0 and (len(Blockchain.chain) - 1 < blocks_needed)
+        return total_votes > 0 or (len(Blockchain.chain) - 1 < blocks_needed)
         
     
     def count_total_votes_in_pool():
