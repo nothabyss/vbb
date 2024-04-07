@@ -192,7 +192,8 @@ class Blockchain:
                     print(f"Block mined. {total_votes} votes remaining, {blocks_to_mine} blocks to mine.")
             else:
                 time.sleep(BLOCK_TIME_LIMIT)
-                append_random_votes(votefile_path, num_votes=10)
+                #uncomment if need add votes
+                #append_random_votes(votefile_path, num_votes=10)
                 print("No mining needed at this time.")
                 
                     
