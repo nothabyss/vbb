@@ -90,7 +90,7 @@ class Blockchain:
     #                     break  # End of file reached
     #     except FileNotFoundError:
     #         print("\n.\n.\n.\n<<<File not found!!>>>")
-    
+    @staticmethod
     def display(EVoting):
         for block in Blockchain.chain:
             print("Block Height: ", block.height)
@@ -98,6 +98,7 @@ class Blockchain:
             print("Total in block: ", block.votecount)
             print("Number of votes: ", block.number_of_votes)
             print("Merkle root: ", block.merkle)
+            # print("Merkle tree: ", block.tree) 先不要在区块里放tree了
             print("Difficulty: ", block.DIFFICULTY)
             print("Time stamp: ", block.timeStamp)
             print("Previous hash: ", block.prevHash)
@@ -107,7 +108,7 @@ class Blockchain:
 
     #--to clear up the votepool after a block has been mined...
     #如果文件不存在则创建新文件。'w+'模式表示可读写，如果文件已存在则清空文件内容
-    
+    @staticmethod
     def update_votepool(processed_votedata):
         try:
             
@@ -135,7 +136,7 @@ class Blockchain:
         except Exception as e:
             print(f"Error updating votefile.csv: {e}")
 
-    
+    @staticmethod
     def is_votepool_empty():
         my_path = votefile_path
         # The file is considered empty if it doesn't exist or has no content
@@ -172,7 +173,7 @@ class Blockchain:
         return True
     
 
-    
+    @staticmethod
     def mine_if_needed():
         while True:
             if Blockchain.should_mine():
@@ -197,7 +198,7 @@ class Blockchain:
                 print("No mining needed at this time.")
                 
                     
-    
+    @staticmethod
     def should_mine():
         total_votes = Blockchain.count_total_votes_in_pool()
         blocks_needed, _ = Blockchain.calculate_block_distribution(total_votes)
@@ -205,7 +206,7 @@ class Blockchain:
         # Check if there are enough votes to mine and if the blockchain doesn't already have the necessary blocks
         return total_votes > 0 or (len(Blockchain.chain) - 1 < blocks_needed)
         
-    
+    @staticmethod
     def count_total_votes_in_pool():
         count = 0
         try:
@@ -216,9 +217,9 @@ class Blockchain:
             print("Error reading votefile.csv")
         return count
     
-    
+    @staticmethod
     def calculate_block_distribution(total_votes):
-        min_blocks = 4
+        min_blocks = 2
         blocks_needed = min_blocks
         if total_votes > min_blocks * maxb:
             votes_per_block = maxb
@@ -236,11 +237,14 @@ class Block:
     the data in the block will be updated later and block will be mined then.
     """
 
-    def __init__(self, height = 0, votes = 0 ,merkle = '0',timeStamp = 0,prevHash = '0', representative_pow = 0, hash = 'Genesis'):
+    def __init__(self, height = 0, votes = 0, merkle = '0', tree=None, timeStamp = 0, prevHash ='0', representative_pow = 0, hash ='Genesis'):
+        if tree is None:
+            tree = []
         self.height = height                    #len(Blockchain.chain-1)
         self.votedata = []                      #loadvote()
         self.votecount = []                     #loadvote()
         self.number_of_votes = votes            #votecount per block
+        self.tree = tree
         self.merkle = merkle                    #calculateMerkleRoot()
         self.DIFFICULTY = DIFFICULTY            #cryptography difficulty
         self.timeStamp = time.time()                   #time()
@@ -319,7 +323,26 @@ class Block:
 
     #--create a merkle tree of vote transactions and return the merkle root of the tree
     def merkleRoot(self):
-        return 'congrats'
+        votedata = self.votedata
+        if len(votedata) == 0:
+            return []
+        if len(votedata) == 1:
+            return [sha256(str(votedata[0]).encode()).hexdigest()]
+        vote_hashes = [sha256(str(vote).encode()).hexdigest() for vote in votedata]
+        if len(vote_hashes) % 2 == 1:
+            vote_hashes.append(vote_hashes[-1])
+        all_hashes = vote_hashes.copy()  # 存储所有节点的列表
+        while len(vote_hashes) > 1:
+            new_hashes = []
+            for i in range(0, len(vote_hashes), 2):
+                if i == len(vote_hashes) - 1:
+                    new_hashes.append(vote_hashes[i])
+                else:
+                    concatenated = vote_hashes[i] + vote_hashes[i + 1]
+                    new_hash = sha256(concatenated.encode()).hexdigest()
+                    new_hashes.append(new_hash)  # 将新节点添加到存储所有节点的列表中
+            vote_hashes = new_hashes
+        return vote_hashes[-1], all_hashes
 
     def mineblock(self, votes_per_block):
         # Assume that the total votes and blocks needed are already calculated
@@ -335,7 +358,7 @@ class Block:
         Blockchain.update_votepool(self.votedata)
 
         # Calculate the Merkle root for the vote data (implement this function if necessary)
-        self.merkle = self.merkleRoot()
+        self.merkle, self.tree = self.merkleRoot()
 
         # Set the block's difficulty and timestamp
         self.DIFFICULTY = DIFFICULTY
