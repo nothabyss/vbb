@@ -1,3 +1,5 @@
+import time
+
 from datalayer.blockchain import Blockchain
 
 # --libraries
@@ -12,9 +14,13 @@ BLOCK_TIME_LIMIT = 20
 
 def main():
     # --Blockchain initialized and Genesis block added
-    EVoting = Blockchain(b"\x02Ed\xc1\xe7\xe1", 1, 20)
-    Blockchain.display(EVoting)
-
+    time1 = time.time()
+    EVoting1 = Blockchain(b"\x02Ed\xc1\xe7\xe1", 1, 20)
+    EVoting1.display()
+    time2 = time.time()
+    duration = time2 - time1
+    print("...................")
+    print(duration)
     return
 
 
