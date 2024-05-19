@@ -17,7 +17,7 @@ from prolayer import verification as ver
 #--<<Global variables>>
 
 #--cryptographic difficulty
-DIFFICULTY = 2
+DIFFICULTY = 3
 
 #--frequency of mining of blocks seconds
 BLOCK_TIME_LIMIT = 20
@@ -66,33 +66,33 @@ class Blockchain:
 
 
 
-    # @staticmethod
-    # def display(EVoting):
-    #     #--print the information of blocks of the blockchain in the console
-    #     try:
-    #         with open(PROJECT_PATH + '/applayer/temp/blockchain.dat','rb') as blockfile:
-    #             while True:
-    #                 try:
-    #                     data = pickle.load(blockfile)
-                
-    #                     #--print all data of a block
-    #                     print("Block Height: ", data.height)
-    #                     print("Data in block: ", data.votedata)
-    #                     print("Total in block: ", data.votecount)
-    #                     print("Number of votes: ",data.number_of_votes)
-    #                     print("Merkle root: ", data.merkle)
-    #                     print("Difficulty: ", data.DIFFICULTY)
-    #                     print("Time stamp: ", data.timeStamp)
-    #                     print("Previous hash: ", data.prevHash)
-    #                     print("Block Hash: ", data.hash)
-    #                     print("Nonce: ", data.nonce, '\n\t\t|\n\t\t|')
-    #                 except EOFError:
-    #                     break  # End of file reached
-    #     except FileNotFoundError:
-    #         print("\n.\n.\n.\n<<<File not found!!>>>")
     @staticmethod
-    def display(EVoting):
-        for block in Blockchain.chain:
+    def display_dat():
+        #--print the information of blocks of the blockchain in the console
+        try:
+            with open(PROJECT_PATH + '/applayer/temp/blockchain.dat','rb') as blockfile:
+                while True:
+                    try:
+                        data = pickle.load(blockfile)
+                
+                        #--print all data of a block
+                        print("Block Height: ", data.height)
+                        print("Data in block: ", data.votedata)
+                        print("Total in block: ", data.votecount)
+                        print("Number of votes: ",data.number_of_votes)
+                        print("Merkle root: ", data.merkle)
+                        print("Difficulty: ", data.DIFFICULTY)
+                        print("Time stamp: ", data.timeStamp)
+                        print("Previous hash: ", data.prevHash)
+                        print("Block Hash: ", data.hash)
+                        print("Nonce: ", data.nonce, '\n\t\t|\n\t\t|')
+                    except EOFError:
+                        break  # End of file reached
+        except FileNotFoundError:
+            print("\n.\n.\n.\n<<<File not found!!>>>")
+
+    def display(self):
+        for block in self.chain:
             print("Block Height: ", block.height)
             print("Data in block: ", block.votedata)
             print("Total in block: ", block.votecount)
@@ -222,7 +222,7 @@ class Blockchain:
         if len(Blockchain.chain) >= 3:
             min_blocks = 1
         else:
-            min_blocks = 4
+            min_blocks = 2
         blocks_needed = min_blocks
         if total_votes > min_blocks * maxb:
             votes_per_block = maxb
@@ -376,7 +376,7 @@ class Block:
 
         Blockchain.chain.append(self)
         if Blockchain.count_total_votes_in_pool() == 0:
-            Blockchain.display(self)
+            Blockchain.display_dat()
         # Append the mined block to the blockchain
         return self  # Return the mined block
 

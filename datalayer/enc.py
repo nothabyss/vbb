@@ -6,7 +6,7 @@ from Crypto.Signature import PKCS1_v1_5
 import hashlib
 import base64
 from Crypto.Hash import SHA256
-from Crypto.Cipher import PKCS1_OAEP, PKCS1_v1_5
+from Crypto.Cipher import PKCS1_OAEP #PKCS1_v1_5
 from Crypto.PublicKey import RSA
 
 #Creating Private Key of 1024 bits and Public Key
@@ -42,6 +42,7 @@ def decrypt(private_key, cipher_text):
 # #Function sign takes two arguments, private key and data.
 # This function returns base64 string of digital signature.
 def digital_sign(private_key, data):
+    data = bytes(data, encoding='utf-8')
     ha = SHA256.new(data)
     signer = PKCS1_v1_5.new(private_key)
     signature = signer.sign(ha)
@@ -50,6 +51,7 @@ def digital_sign(private_key, data):
 # #Function verify takes two arguments, public key and digital signature in base64
 # and returns a boolean True if signature matches the data, False if not matches data.
 def digital_verify(publickey, signature, data):
+    data = bytes(data, encoding='utf-8')
     ha = SHA256.new(data)
     verifier = PKCS1_v1_5.new(publickey)
     if verifier.verify(ha, signature):
@@ -69,10 +71,14 @@ if __name__=='__main__':
     # # print(type(locked))
     # print("verify the signature:", verify)
     sk, pk = rsakeys()
-    text = "this is a test"
+    text = "I am a voter"
+    a = digital_sign(sk, text)
+    b = digital_verify(pk, a, text)
     # m = "flag{I_Really_Love_You_Very_much_Forver_every!}"
-    en = encrypt(pk, text)
-    de = decrypt(sk, en)
-    print("cypher_text:", en)
-    print("plain text:", de)
+    # en = encrypt(pk, text)
+    # de = decrypt(sk, en)
+    # print("cypher_text:", en)
+    # print("plain text:", de)
     # de = decrypt(sk, text)
+    print(a)
+    print(b)

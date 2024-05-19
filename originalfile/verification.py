@@ -18,3 +18,4 @@ def verify_block(block):
     check_2 = sha256((str(str(block.data)+str(block.nonce)+str(block.timeStamp)+str(block.prevHash))).encode('utf-8')).hexdigest()
 
     return check_1==check_2
+
