@@ -91,8 +91,22 @@ class Blockchain:
         except FileNotFoundError:
             print("\n.\n.\n.\n<<<File not found!!>>>")
 
-    def display(self):
-        for block in self.chain:
+    # def display(self):
+    #     for block in self.chain:
+    #         print("Block Height: ", block.height)
+    #         print("Data in block: ", block.votedata)
+    #         print("Total in block: ", block.votecount)
+    #         print("Number of votes: ", block.number_of_votes)
+    #         print("Merkle root: ", block.merkle)
+    #         # print("Merkle tree: ", block.tree) 先不要在区块里放tree了
+    #         print("Difficulty: ", block.DIFFICULTY)
+    #         print("Time stamp: ", block.timeStamp)
+    #         print("Previous hash: ", block.prevHash)
+    #         print("Block Hash: ", block.hash)
+    #         print("Nonce: ", block.nonce, '\n\t\t|\n\t\t|')
+    @staticmethod
+    def display():
+        for block in Blockchain.chain:
             print("Block Height: ", block.height)
             print("Data in block: ", block.votedata)
             print("Total in block: ", block.votecount)
@@ -105,11 +119,10 @@ class Blockchain:
             print("Block Hash: ", block.hash)
             print("Nonce: ", block.nonce, '\n\t\t|\n\t\t|')
 
-
     #--to clear up the votepool after a block has been mined...
     #如果文件不存在则创建新文件。'w+'模式表示可读写，如果文件已存在则清空文件内容
     @staticmethod
-    def update_votepool(processed_votedata):
+    def update_votepool(processed_votedata, votefile_path):
         try:
             
             # Open and read the existing votes from the vote pool
@@ -137,7 +150,7 @@ class Blockchain:
             print(f"Error updating votefile.csv: {e}")
 
     @staticmethod
-    def is_votepool_empty():
+    def is_votepool_empty(votefile_path):
         my_path = votefile_path
         # The file is considered empty if it doesn't exist or has no content
         return not os.path.isfile(my_path) or os.stat(my_path).st_size == 0
@@ -174,10 +187,10 @@ class Blockchain:
     
 
     @staticmethod
-    def mine_if_needed():
+    def mine_if_needed(votefile_path):
         while True:
             if Blockchain.should_mine():
-                total_votes = Blockchain.count_total_votes_in_pool()
+                total_votes = Blockchain.count_total_votes_in_pool(votefile_path)
                 blocks_to_mine, _ = Blockchain.calculate_block_distribution(total_votes)
 
                 while total_votes > 0 and blocks_to_mine > 0:
@@ -187,7 +200,7 @@ class Blockchain:
                     new_block = Block()
                     new_block.mineblock(votes_per_block)
 
-                    total_votes = Blockchain.count_total_votes_in_pool()  # Update the total votes after mining a block
+                    total_votes = Blockchain.count_total_votes_in_pool(votefile_path)  # Update the total votes after mining a block
                     blocks_to_mine -= 1  # Decrement the number of blocks to mine
 
                     print(f"Block mined. {total_votes} votes remaining, {blocks_to_mine} blocks to mine.")
@@ -207,7 +220,7 @@ class Blockchain:
         return total_votes > 0 or (len(Blockchain.chain) - 1 < blocks_needed)
         
     @staticmethod
-    def count_total_votes_in_pool():
+    def count_total_votes_in_pool(votefile_path):
         count = 0
         try:
             with open(votefile_path, 'r', newline='', encoding='UTF-8') as votepool:
@@ -293,7 +306,7 @@ class Block:
     #         print("Updating unconfirmed vote pool...")
     #         print (Blockchain.update_votepool())
     @staticmethod
-    def load_data(votes_per_block):
+    def load_data(votes_per_block, votefile_path):
         votelist = []
         votecount = {}
         count = 0
@@ -320,7 +333,7 @@ class Block:
 
         finally:
             if count > 0:
-                Blockchain.update_votepool(votelist)  # Ensure this updates the file correctly, removing only processed votes
+                Blockchain.update_votepool(votelist, votefile_path)  # Ensure this updates the file correctly, removing only processed votes
 
         return votelist, votecount, count
 
@@ -355,10 +368,10 @@ class Block:
         self.prevHash = Blockchain.chain[-1].hash if self.height > 0 else '0'
 
         # Load vote data and count into the block based on votes_per_block
-        self.votedata, self.votecount, self.number_of_votes = Block.load_data(votes_per_block)
+        self.votedata, self.votecount, self.number_of_votes = Block.load_data(votes_per_block, votefile_path)
 
         # Update the vote pool by removing the votes that are now loaded into the block
-        Blockchain.update_votepool(self.votedata)
+        Blockchain.update_votepool(self.votedata, votefile_path)
 
         # Calculate the Merkle root for the vote data (implement this function if necessary)
         self.merkle, self.tree = self.merkleRoot()
@@ -375,8 +388,8 @@ class Block:
 
 
         Blockchain.chain.append(self)
-        if Blockchain.count_total_votes_in_pool() == 0:
-            Blockchain.display_dat()
+        if Blockchain.count_total_votes_in_pool(votefile_path) == 0:
+            Blockchain.display()
         # Append the mined block to the blockchain
         return self  # Return the mined block
 
@@ -395,11 +408,10 @@ class GenesisBlock(Block):
             'utf-8')).hexdigest()
 
 # To run the mining check in a separate thread
-def run_mining_scheduler():
-    mining_thread = Thread(target=Blockchain.mine_if_needed)
+def run_mining_scheduler(votefile_path):
+    mining_thread = Thread(target=Blockchain.mine_if_needed(votefile_path))
     mining_thread.start()
 
 # Call this function at the start of your program
-print("211111111111111111111111")
-time.sleep(5)
-run_mining_scheduler()
+
+# run_mining_scheduler()

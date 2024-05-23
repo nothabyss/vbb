@@ -7,11 +7,11 @@
 import os
 import time
 
-from datalayer.blockchain import Blockchain
+from datalayer.blockchain3 import Blockchain, run_mining_scheduler
 
 PROJECT_PATH = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-votefile_path = os.path.join(PROJECT_PATH, 'applayer', 'vote_pool')
+votefile_path = os.path.join(PROJECT_PATH, 'vbbNew', 'applayer', 'vote_pool')
 
 
 def count_csv_files(votefile_path):
@@ -26,6 +26,11 @@ def listening():
 def main():
 
     csv_files = count_csv_files(votefile_path)
+    print(csv_files)
     for i in range(len(csv_files)):
-        voting_activity = Blockchain(b"\x02Ed\xc1\xe7\xe1", 1, 20)
+        voting_activity = Blockchain(b"\x02Ed\xc1\xe7\xe1", i, 20)
         # 读取csv文件名，作为输入参数
+        run_mining_scheduler(os.path.join(votefile_path, csv_files[i]))
+
+if __name__ == '__main__':
+    main()
