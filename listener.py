@@ -6,31 +6,41 @@
 '''
 import os
 import time
-
-from datalayer.blockchain3 import Blockchain, run_mining_scheduler
+from threading import Thread
+from datalayer.blockchain3 import Blockchain
 
 PROJECT_PATH = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-
-votefile_path = os.path.join(PROJECT_PATH, 'vbbNew', 'applayer', 'vote_pool')
-
+votefile_path = os.path.join(PROJECT_PATH, 'vbb', 'applayer', 'vote_pool')
 
 def count_csv_files(votefile_path):
     csv_files = [file for file in os.listdir(votefile_path) if file.endswith('.csv')]
     return csv_files
 
-def listening():
-    num_csv_files = count_csv_files(votefile_path)
-    print(f"Number of csv files in directory: {num_csv_files}")
-    time.sleep(5)  # 每隔5秒检测一次
+def run_mining_scheduler(blockchain_instance):
+    mining_thread = Thread(target=blockchain_instance.mine_if_needed)
+    mining_thread.start()
+    return mining_thread
+
+def process_csv_file(file_path, index):
+    # Create a Blockchain object
+    voting_activity = Blockchain(b"\x02Ed\xc1\xe7\xe1", index, 20, file_path)
+    run_mining_scheduler(voting_activity)
 
 def main():
-
     csv_files = count_csv_files(votefile_path)
     print(csv_files)
-    for i in range(len(csv_files)):
-        voting_activity = Blockchain(b"\x02Ed\xc1\xe7\xe1", i, 20)
-        # 读取csv文件名，作为输入参数
-        run_mining_scheduler(os.path.join(votefile_path, csv_files[i]))
+    threads = []
+
+    for i, csv_file in enumerate(csv_files):
+        file_path = os.path.join(votefile_path, csv_file)
+        print(csv_file)
+        thread = Thread(target=process_csv_file, args=(file_path, i))
+        threads.append(thread)
+        thread.start()
+
+    # Wait for all threads to complete
+    for thread in threads:
+        thread.join()
 
 if __name__ == '__main__':
     main()
