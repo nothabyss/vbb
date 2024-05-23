@@ -400,4 +400,6 @@ def run_mining_scheduler():
     mining_thread.start()
 
 # Call this function at the start of your program
+print("211111111111111111111111")
+time.sleep(5)
 run_mining_scheduler()
