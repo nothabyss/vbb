@@ -15,8 +15,8 @@ BLOCK_TIME_LIMIT = 20
 def main():
     # --Blockchain initialized and Genesis block added
     time1 = time.time()
-    EVoting1 = Blockchain(b"\x02Ed\xc1\xe7\xe1", 1, 20)
-    EVoting1.display()
+    EVoting1 = Blockchain(1, b"\x02Ed\xc1\xe7\xe1", 20)
+    Blockchain.display()
     time2 = time.time()
     duration = time2 - time1
     print("...................")
