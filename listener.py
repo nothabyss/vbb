@@ -18,13 +18,13 @@ def count_csv_files(votefile_path):
 
 def run_mining_scheduler(blockchain_instance):
     mining_thread = Thread(target=blockchain_instance.mine_if_needed)
-    mining_thread.start()
+    # mining_thread.start()
     return mining_thread
 
-def process_csv_file(file_path, index):
-    # Create a Blockchain object
-    voting_activity = Blockchain(b"\x02Ed\xc1\xe7\xe1", index, 20, file_path)
-    run_mining_scheduler(voting_activity)
+# def process_csv_file(file_path, index):
+#     # Create a Blockchain object
+#     voting_activity = Blockchain(b"\x02Ed\xc1\xe7\xe1", index, 20, file_path)
+#     run_mining_scheduler(voting_activity)
 
 def main():
     csv_files = count_csv_files(votefile_path)
@@ -34,7 +34,9 @@ def main():
     for i, csv_file in enumerate(csv_files):
         file_path = os.path.join(votefile_path, csv_file)
         print(csv_file)
-        thread = Thread(target=process_csv_file, args=(file_path, i))
+        # thread = Thread(target=process_csv_file, args=(file_path, i))
+        voting_activity = Blockchain(b"\x02Ed\xc1\xe7\xe1", i, 20, file_path)
+        thread = run_mining_scheduler(voting_activity)
         threads.append(thread)
         thread.start()
 

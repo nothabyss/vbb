@@ -168,17 +168,28 @@ class Blockchain:
                 total_votes = self.count_total_votes_in_pool()
                 blocks_to_mine, _ = self.calculate_block_distribution(total_votes)
 
+                # while total_votes > 0 and blocks_to_mine > 0:
+                #     votes_per_block = math.ceil(total_votes / blocks_to_mine)
+                #     print(f'[{current_thread().name}] Mining a block with {votes_per_block} votes...')
+                #
+                #     # Acquire the lock before mining
+                #     with lock:
+                #         new_block = Block()
+                #         new_block.mineblock(self, votes_per_block)
+                #
+                #         total_votes = self.count_total_votes_in_pool()  # Update the total votes after mining a block
+                #         blocks_to_mine -= 1  # Decrement the number of blocks to mine
+                #
+                #     print(f'[{current_thread().name}] Block mined. {total_votes} votes remaining, {blocks_to_mine} blocks to mine.')
                 while total_votes > 0 and blocks_to_mine > 0:
                     votes_per_block = math.ceil(total_votes / blocks_to_mine)
-                    print(f'[{current_thread().name}] Mining a block with {votes_per_block} votes...')
+                    print(f"Mining a block with {votes_per_block} votes...")
 
-                    # Acquire the lock before mining
-                    with lock:
-                        new_block = Block()
-                        new_block.mineblock(self, votes_per_block)
+                    new_block = Block()
+                    new_block.mineblock(self, votes_per_block)
 
-                        total_votes = self.count_total_votes_in_pool()  # Update the total votes after mining a block
-                        blocks_to_mine -= 1  # Decrement the number of blocks to mine
+                    total_votes = Blockchain.count_total_votes_in_pool(self)  # Update the total votes after mining a block
+                    blocks_to_mine -= 1  # Decrement the number of blocks to mine
 
                     print(f'[{current_thread().name}] Block mined. {total_votes} votes remaining, {blocks_to_mine} blocks to mine.')
             else:
