@@ -222,7 +222,7 @@ class Blockchain:
         if len(Blockchain.chain) >= 3:
             min_blocks = 1
         else:
-            min_blocks = 2
+            min_blocks = 4
         blocks_needed = min_blocks
         if total_votes > min_blocks * maxb:
             votes_per_block = maxb
