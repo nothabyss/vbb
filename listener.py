@@ -35,7 +35,7 @@ def main():
         file_path = os.path.join(votefile_path, csv_file)
         print(csv_file)
         # thread = Thread(target=process_csv_file, args=(file_path, i))
-        voting_activity = Blockchain(b"\x02Ed\xc1\xe7\xe1", i, 200, 7, file_path)
+        voting_activity = Blockchain(b"\x02Ed\xc1\xe7\xe1", i, 10, 7, file_path)
         thread = run_mining_scheduler(voting_activity)
         threads.append(thread)
         thread.start()

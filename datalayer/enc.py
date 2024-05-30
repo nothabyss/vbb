@@ -1,21 +1,20 @@
 import Crypto
 from Crypto import Random
-import pickle
-import pdb
-from Crypto.Signature import PKCS1_v1_5
-import hashlib
 import base64
-from Crypto.Hash import SHA256
-from Crypto.Cipher import PKCS1_OAEP #PKCS1_v1_5
 from Crypto.PublicKey import RSA
+from Crypto.Signature import pss
+from Crypto.Hash import SHA256
+from Crypto.Cipher import PKCS1_OAEP, PKCS1_v1_5
 
-#Creating Private Key of 1024 bits and Public Key
+
+# Creating Private Key of 1024 bits and Public Key
 # 公钥和私钥
 def rsakeys():
-    length=1024
+    length = 1024
     privatekey = RSA.generate(length, Random.new().read)
     publickey = privatekey.publickey()
     return privatekey, publickey
+
 
 # 公钥加密
 def encrypt(publick_key, text):
@@ -28,9 +27,11 @@ def encrypt(publick_key, text):
     # return str(cipher_text, encoding='utf-8')
     return cipher_text
 
-#私钥解密
+
+# 私钥解密
 def decrypt(private_key, cipher_text):
     # 对密文进行Base64解码
+
     cipher_text = base64.b64decode(cipher_text)
     # 使用RSA私钥解密
     cipher = PKCS1_OAEP.new(key=private_key)
@@ -43,24 +44,27 @@ def decrypt(private_key, cipher_text):
 # This function returns base64 string of digital signature.
 def digital_sign(private_key, data):
     data = bytes(data, encoding='utf-8')
-    ha = SHA256.new(data)
-    signer = PKCS1_v1_5.new(private_key)
-    signature = signer.sign(ha)
+    h = SHA256.new(data)
+    signer = pss.new(private_key)
+    signature = signer.sign(h)
     return signature
+
+
 # # 利用公钥验证签名
 # #Function verify takes two arguments, public key and digital signature in base64
 # and returns a boolean True if signature matches the data, False if not matches data.
-def digital_verify(publickey, signature, data):
+def verify_signature(public_key, data, signature):
     data = bytes(data, encoding='utf-8')
-    ha = SHA256.new(data)
-    verifier = PKCS1_v1_5.new(publickey)
-    if verifier.verify(ha, signature):
+    h = SHA256.new(data)
+    verifier = pss.new(public_key)
+    try:
+        verifier.verify(h, signature)
         return True
-    else:
+    except (ValueError, TypeError):
         return False
 
 
-if __name__=='__main__':
+if __name__ == '__main__':
     # sk,pk = rsakeys()
     # print("public key:", sk)
     # print("private key:", pk)
@@ -71,14 +75,19 @@ if __name__=='__main__':
     # # print(type(locked))
     # print("verify the signature:", verify)
     sk, pk = rsakeys()
-    text = "I am a voter"
-    a = digital_sign(sk, text)
-    b = digital_verify(pk, a, text)
+    text = "this is a test"
     # m = "flag{I_Really_Love_You_Very_much_Forver_every!}"
-    # en = encrypt(pk, text)
-    # de = decrypt(sk, en)
-    # print("cypher_text:", en)
-    # print("plain text:", de)
+    en = encrypt(pk, text)
+    de = decrypt(sk, en)
+    ds = digital_sign(sk, text)
+    vs = verify_signature(pk, text, ds)
+    print("we got a public key:", sk)
+    print("we got a private key:", pk)
+    print("cypher_text:", en)
+    print("plain text:", de)
+    print("digital signature", ds)
+    print("verify the signature:", vs)
     # de = decrypt(sk, text)
-    print(a)
-    print(b)
+    # sk, pk = rsakeys()
+    # decoded_publickey = pk.export_key().decode('utf-8')
+    # print(str(decoded_publickey.replace('\\n', '\n')))
