@@ -36,13 +36,15 @@ def main():
         print(csv_file)
         # thread = Thread(target=process_csv_file, args=(file_path, i))
         voting_activity = Blockchain(b"\x02Ed\xc1\xe7\xe1", i, 10, 7, file_path)
-        thread = run_mining_scheduler(voting_activity)
-        threads.append(thread)
+        thread = Thread(target=run_mining_scheduler, args=(voting_activity,))
         thread.start()
+        threads.append((thread, file_path))
+
 
     # Wait for all threads to complete
-    for thread in threads:
+    for thread, file_path in threads:
         thread.join()
+        os.remove(file_path)
 
 if __name__ == '__main__':
     main()
