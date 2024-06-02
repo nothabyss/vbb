@@ -36,12 +36,22 @@ class Blockchain:
     MAX_VOTES_PER_BLOCK = 50
 
     def __init__(self, vote_activity_id, initiator_puk, max_votes, max_days, votefile_path):
+        self.load_blockchain()
         self.votefile_path = votefile_path
         self.max_votes = max_votes
         self.max_days = max_days * 24 * 60 * 60  # Convert days to seconds
         self.start_time = time.time()
         self.add_genesis(vote_activity_id, initiator_puk)
         print(f'[{current_thread().name}] Blockchain initialized')
+
+    def load_blockchain(self):
+            try:
+                with open(os.path.join(PROJECT_PATH, 'applayer/temp/blockchain_complete.dat'), 'rb') as file:
+                    Blockchain.chain = pickle.load(file)
+                    print(f"[{current_thread().name}] Blockchain loaded successfully.")
+            except FileNotFoundError:
+                print(f"[{current_thread().name}] No existing blockchain found. Starting new.")
+
 
     # --genesis block creation has nothing to do with blockchain class,
     # --..but has to be created when blockchain is initialized
@@ -350,10 +360,13 @@ class Block:
         self.hash = self.calcHash()
 
         Blockchain.chain.append(self)
+        with open(os.path.join(PROJECT_PATH, 'applayer/temp/blockchain_complete.dat'), 'wb') as file:
+            pickle.dump(Blockchain.chain, file, protocol=2)
         if blockchain_instance.count_total_votes_in_pool() == 0:
             Blockchain.display()
         # Append the mined block to the blockchain
         return self  # Return the mined block
+
 
 class GenesisBlock(Block):
     def __init__(self, vote_activity_id, initiator_puk, version="v1.0"):
