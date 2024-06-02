@@ -27,22 +27,23 @@ def run_mining_scheduler(blockchain_instance):
 #     run_mining_scheduler(voting_activity)
 
 def main():
-    csv_files = count_csv_files(votefile_path)
-    print(csv_files)
-    threads = []
+    while True:
+        csv_files = count_csv_files(votefile_path)
+        print(csv_files)
+        threads = []
 
-    for i, csv_file in enumerate(csv_files):
-        file_path = os.path.join(votefile_path, csv_file)
-        print(csv_file)
-        # thread = Thread(target=process_csv_file, args=(file_path, i))
-        voting_activity = Blockchain(b"\x02Ed\xc1\xe7\xe1", i, 10, 7, file_path)
-        thread = run_mining_scheduler(voting_activity)
-        threads.append(thread)
-        thread.start()
+        for i, csv_file in enumerate(csv_files):
+            file_path = os.path.join(votefile_path, csv_file)
+            print(csv_file)
+            # thread = Thread(target=process_csv_file, args=(file_path, i))
+            voting_activity = Blockchain(b"\x02Ed\xc1\xe7\xe1", i, 10, 7, file_path)
+            thread = run_mining_scheduler(voting_activity)
+            threads.append(thread)
+            thread.start()
 
-    # Wait for all threads to complete
-    for thread in threads:
-        thread.join()
+        # Wait for all threads to complete
+        for thread in threads:
+            thread.join()
 
 if __name__ == '__main__':
     main()

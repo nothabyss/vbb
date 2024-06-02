@@ -13,6 +13,12 @@ def rsakeys():
     length = 1024
     privatekey = RSA.generate(length, Random.new().read)
     publickey = privatekey.publickey()
+
+
+    decoded_publickey = publickey.export_key().decode('utf-8')
+    decoded_privatekey = privatekey.export_key().decode('utf-8')
+    publickey = str(decoded_publickey.replace('\\n', '\n'))
+    privatekey = str(decoded_privatekey.replace('\\n', '\n'))
     return privatekey, publickey
 
 
@@ -74,20 +80,31 @@ if __name__ == '__main__':
     # print("digital signature", locked)
     # # print(type(locked))
     # print("verify the signature:", verify)
-    sk, pk = rsakeys()
-    text = "this is a test"
+
+    # ---------
+    # sk, pk = rsakeys()
+    # text = "this is a test"
     # m = "flag{I_Really_Love_You_Very_much_Forver_every!}"
-    en = encrypt(pk, text)
-    de = decrypt(sk, en)
-    ds = digital_sign(sk, text)
-    vs = verify_signature(pk, text, ds)
-    print("we got a public key:", sk)
-    print("we got a private key:", pk)
-    print("cypher_text:", en)
-    print("plain text:", de)
-    print("digital signature", ds)
-    print("verify the signature:", vs)
+
+    #
+    # en = encrypt(pk, text)
+    # de = decrypt(sk, en)
+    # ds = digital_sign(sk, text)
+    # vs = verify_signature(pk, text, ds)
+    # print("we got a public key:", sk)
+    # print("we got a private key:", pk)
+    # print("cypher_text:", en)
+    # print("plain text:", de)
+    # print("digital signature", ds)
+    # print("verify the signature:", vs)
     # de = decrypt(sk, text)
+
     # sk, pk = rsakeys()
     # decoded_publickey = pk.export_key().decode('utf-8')
+    # decoded_privatekey = sk.export_key().decode('utf-8')
+    # print("public key:")
     # print(str(decoded_publickey.replace('\\n', '\n')))
+    # print("-------------------------------")
+    # print("private key")
+    # print(str(decoded_privatekey.replace('\\n', '\n')))
+    print(1)
