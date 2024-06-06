@@ -97,14 +97,16 @@ class Blockchain:
         self.votefile_path = path
 
     @staticmethod
-    def display_dat():
+    def display_dat(self):
         # --print the information of blocks of the blockchain in the console
+        data_file_path = os.path.join(self.chain_folder, 'blockchain.dat')
+        
         try:
-            with open(PROJECT_PATH + '/applayer/temp/blockchain.dat', 'rb') as blockfile:
+            with open(data_file_path, 'rb') as blockfile:
                 while True:
                     try:
                         data = pickle.load(blockfile)
-                        # --print all data of a block
+                        # Print all data of a block
                         print(f'[{current_thread().name}] Block Height: {data.height}')
                         print(f'[{current_thread().name}] Data in block: {data.votedata}')
                         print(f'[{current_thread().name}] Total in block: {data.votecount}')
@@ -118,7 +120,7 @@ class Blockchain:
                     except EOFError:
                         break  # End of file reached
         except FileNotFoundError:
-            print(f'\n.\n.\n.\n<<<File not found!!>>>')
+            print(f'File not found: {data_file_path}')
 
     @staticmethod
     def display():
