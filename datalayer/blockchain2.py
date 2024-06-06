@@ -35,8 +35,12 @@ class Blockchain:
     # Fixed maximum votes per block
     MAX_VOTES_PER_BLOCK = 50
 
-    def __init__(self, vote_activity_id, initiator_puk, max_votes, max_days, votefile_path):
-        # self.load_specific_block()
+    def __init__(self, vote_activity_id, initiator_puk, max_votes, max_days, votefile_path, new_chain=True):
+        if new_chain:
+            self.chain_folder = self.create_chain_folder(vote_activity_id, initiator_puk)
+        else:
+            self.chain_folder = self.identify_existing_chain_folder()
+        self.load_blockchain()
         self.votefile_path = votefile_path
         self.max_votes = max_votes
         self.max_days = max_days * 24 * 60 * 60  # Convert days to seconds
@@ -44,26 +48,50 @@ class Blockchain:
         self.add_genesis(vote_activity_id, initiator_puk)
         print(f'[{current_thread().name}] Blockchain initialized')
 
-    def load_specific_block(block_height):
-        block_file_path = os.path.join(PROJECT_PATH, f'applayer/temp/block_{block_height}.dat')
-        try:
-            with open(block_file_path, 'rb') as file:
-                block = pickle.load(file)
-                return block
-        except FileNotFoundError:
-            print(f"Block {block_height} not found.")
-            return None
+    def create_chain_folder(self, vote_activity_id, initiator_puk):
+        identifier = f"{vote_activity_id}-{initiator_puk}"
+        folder_name = f"chain_{identifier}"
+        folder_path = os.path.join(PROJECT_PATH, 'applayer/chains', folder_name)
+        if not os.path.exists(folder_path):
+            os.makedirs(folder_path)
+        return folder_path
 
+    def load_blockchain(self):
+        chain_file_path = os.path.join(self.chain_folder, 'blockchain.dat')
+        try:
+            with open(chain_file_path, 'rb') as file:
+                Blockchain.chain = pickle.load(file)
+                print(f"[{current_thread().name}] Blockchain loaded successfully.")
+        except FileNotFoundError:
+            print(f"[{current_thread().name}] No existing blockchain found in {self.chain_folder}. Starting new.")
+
+    def identify_existing_chain_folder(self):
+        chains_path = os.path.join(PROJECT_PATH, 'applayer/chains')
+        if not os.path.exists(chains_path):
+            print("No chain directories found. Creating a new chain.")
+            return None  # Return None if no directories exist yet
+
+        # Get all directories within the chains path
+        try:
+            directories = [os.path.join(chains_path, d) for d in os.listdir(chains_path) if os.path.isdir(os.path.join(chains_path, d))]
+            # Find the most recently modified directory
+            latest_folder = max(directories, key=os.path.getmtime)
+            print(f"Using existing chain folder: {latest_folder}")
+            return latest_folder
+        except ValueError:
+            print("Error finding the most recently modified chain directory.")
+            return None
 
     # --genesis block creation has nothing to do with blockchain class,
     # --..but has to be created when blockchain is initialized
     def add_genesis(self, vote_activity_id, initiator_puk):
         genesis = GenesisBlock(vote_activity_id, initiator_puk)
         self.chain.append(genesis)
-        # --genesis block created and saved in blockchain data file
-        with open('applayer/temp/blockchain.dat', 'wb') as genfile:
+        # Save the genesis block in the designated chain folder
+        genesis_file_path = os.path.join(self.chain_folder, 'blockchain.dat')
+        with open(genesis_file_path, 'wb') as genfile:
             pickle.dump(genesis, genfile)
-        print(f'[{current_thread().name}] Genesis block added')
+        print(f'[{current_thread().name}] Genesis block added to {genesis_file_path}')
 
     def set_votefile_path(self, path):
         self.votefile_path = path
@@ -362,9 +390,9 @@ class Block:
         self.hash = self.calcHash()
 
         Blockchain.chain.append(self)
-        # block_file_path = os.path.join(PROJECT_PATH, f'applayer/temp/block_{self.height}.dat')
-        # with open(block_file_path, 'wb') as file:
-        #     pickle.dump(self, file, protocol=2)
+        chain_file_path = os.path.join(blockchain_instance.chain_folder, 'blockchain.dat')
+        with open(chain_file_path, 'wb') as file:
+            pickle.dump(Blockchain.chain, file, protocol=2)
         if blockchain_instance.count_total_votes_in_pool() == 0:
             Blockchain.display()
         # Append the mined block to the blockchain
