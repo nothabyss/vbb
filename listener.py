@@ -6,11 +6,12 @@
 '''
 import os
 import time
+from random import random
 from threading import Thread
 from datalayer.blockchain2 import Blockchain
 
 PROJECT_PATH = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-votefile_path = os.path.join(PROJECT_PATH, 'vbb', 'applayer', 'vote_pool')
+votefile_path = os.path.join(PROJECT_PATH, 'vbb', 'records', 'vote_pool')
 
 def count_csv_files(votefile_path):
     csv_files = [file for file in os.listdir(votefile_path) if file.endswith('.csv')]
@@ -30,25 +31,28 @@ def run_mining_scheduler(blockchain_instance):
 #     run_mining_scheduler(voting_activity)
 
 def main():
-    csv_files = count_csv_files(votefile_path)
-    print(csv_files)
-    threads = []
+    while True:
+        csv_files = count_csv_files(votefile_path)
+        print(csv_files)
+        threads = []
 
-    for i, csv_file in enumerate(csv_files):
-        file_path = os.path.join(votefile_path, csv_file)
-        print(csv_file)
-        # thread = Thread(target=process_csv_file, args=(file_path, i))
-        voting_activity = Blockchain(b"\x02Ed\xc1\xe7\xe1", i, 10, 7, file_path)
-        thread = run_mining_scheduler(voting_activity)  # This function now handles threading
-        threads.append((thread, csv_file))
+        for i, csv_file in enumerate(csv_files):
+            file_path = os.path.join(votefile_path, csv_file)
+            print(csv_file)
+            # thread = Thread(target=process_csv_file, args=(file_path, i))
+            # voting_activity = Blockchain(str(random()) + "c3aaee7dc8fc47201fb4ec60e53ff3ced373fba0fad0f977c6919e84785f0c", i, 10, 7, file_path)
+            voting_activity = Blockchain("c3aaee7dc8fc47201fb4ec60e53ff3ced373fba0fad0f977c6919e84785f0c", i, 10, 7, file_path)
+            thread = run_mining_scheduler(voting_activity)  # This function now handles threading
+            threads.append((thread, csv_file))
 
 
-    # Wait for all threads to complete
-    for thread, csv_file in threads:
-        thread.join()  # Wait for all threads to complete
-        csv_file_path = os.path.join(votefile_path, csv_file)
-        if os.stat(csv_file_path).st_size == 0:
-            os.remove(csv_file_path)
+        # Wait for all threads to complete
+        for thread, csv_file in threads:
+            thread.join()  # Wait for all threads to complete
+            csv_file_path = os.path.join(votefile_path, csv_file)
+            if os.stat(csv_file_path).st_size == 0:
+                os.remove(csv_file_path)
 
+        time.sleep(3)
 if __name__ == '__main__':
     main()

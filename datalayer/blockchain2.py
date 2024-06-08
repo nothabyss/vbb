@@ -51,7 +51,7 @@ class Blockchain:
     def create_chain_folder(self, vote_activity_id, initiator_puk):
         identifier = f"{vote_activity_id}-{initiator_puk}"
         folder_name = f"chain_{identifier}"
-        folder_path = os.path.join(PROJECT_PATH, 'applayer/chains', folder_name)
+        folder_path = os.path.join(PROJECT_PATH, 'records/chains', folder_name)
         if not os.path.exists(folder_path):
             os.makedirs(folder_path)
         return folder_path
@@ -66,7 +66,7 @@ class Blockchain:
             print(f"[{current_thread().name}] No existing blockchain found in {self.chain_folder}. Starting new.")
 
     def identify_existing_chain_folder(self):
-        chains_path = os.path.join(PROJECT_PATH, 'applayer/chains')
+        chains_path = os.path.join(PROJECT_PATH, 'records/chains')
         if not os.path.exists(chains_path):
             print("No chain directories found. Creating a new chain.")
             return None  # Return None if no directories exist yet
