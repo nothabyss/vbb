@@ -85,22 +85,29 @@ def verify_signature(public_key, data, signature):
     except (ValueError, TypeError):
         return False
 
+def hash_public_key(publick_key,):
+    data = bytes(publick_key, encoding='utf-8')
+    h = SHA256.new(data)
+    hash_value = h.hexdigest()  # 获取十六进制表示的哈希值
+    return hash_value
 
 if __name__ == '__main__':
     # ---------
     # sk, pk = rsakeys()
-    # text = "this is a test"
-    #
-    # en = encrypt(pk, text)
-    # de = decrypt(sk, en)
-    # ds = digital_sign(sk, text)
-    # vs = verify_signature(pk, text, ds)
-    # print("we got a public key:", sk)
-    # print("we got a private key:", pk)
-    # print("cypher_text:", en)
-    # print("plain text:", de)
-    # print("digital signature", ds)
-    # print("verify the signature:", vs)
+    sk = '''-----BEGIN RSA PRIVATE KEY-----\nMIICXAIBAAKBgQDBwRKyMv9mENPMX/N4/hvAHgZiWYMDn2s+Gabp/2bNt4WoXi4w\n8GNL1gOM7Mc7Bua43nseC7euGTQbDVT+6y8RndssQe6vJizjwflzkERtUXJIRcH5\nhMbnT5Q5YAaOl5kGmNurWa8cAumaFvdfPYlYiFSWXE4y7+MRs+IOy0DM1wIDAQAB\nAoGAQysLL7KlPn1j50x2K8Iv3ZyrCupMFHPuKiObbTBos7VFBRbNPZMAYVhqd67X\n7HsafglGtiZKwXSkTyKCjjL66C3kZ/44PSlAgppjNrkzwe3qUT0b8kOZUkrNzccw\nT0z+sJO/vddcsba9tiYuAWxZNbPUPgvFr5qkqEb6IjZ1QU0CQQDKJh+ynHfD2fpO\np191hZwR48CRsDiHsred669YTzOt7qpmWNk9um4NeijFaBmmQ5gNIERXAuJc9bHm\nUwh2ppilAkEA9V5092NwyzynZkNjvyHfINldIl+5I9hN9UDM/r2KkoUee+Ub9SHK\nHinwKXvZvJWfnMzTmdArdaUQTRVonQEaywJBAKT/ARhURh0BqiDQ1EWkTIL9loxT\nfZCk+uJXIMO/wbrR9xuaoZaUuIcfkm+uTGE9ArqT/7PVktW1ZQNN+rZ9vFECQCNH\njIvReXNPakZS5DGkHh/sAO8jUkxsGnFr+s2Z1SXSDBsGSynIzPXfU8+zJhBudv+l\nl7si6kzFCf37WQpSEVcCQAYWjPwLK7jqxw4WN7Df1iENZGkz14meRnL7HBP804zy\nHZwZYkaRU21RvkgXGZPrvu0CmpRW85xJTa7gZ7Z7uZE=\n-----END RSA PRIVATE KEY-----'''
+    pk = '''-----BEGIN PUBLIC KEY-----\nMIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDBwRKyMv9mENPMX/N4/hvAHgZi\nWYMDn2s+Gabp/2bNt4WoXi4w8GNL1gOM7Mc7Bua43nseC7euGTQbDVT+6y8Rndss\nQe6vJizjwflzkERtUXJIRcH5hMbnT5Q5YAaOl5kGmNurWa8cAumaFvdfPYlYiFSW\nXE4y7+MRs+IOy0DM1wIDAQAB\n-----END PUBLIC KEY-----'''
+    text = "this is a test"
+
+    en = encrypt(pk, text)
+    de = decrypt(sk, en)
+    ds = digital_sign(sk, text)
+    vs = verify_signature(pk, text, ds)
+    print("we got a public key:", pk)
+    print("we got a private key:", sk)
+    print("cypher_text:", en)
+    print("plain text:", de)
+    print("digital signature", ds)
+    print("verify the signature:", vs)
     
 
     # sk, pk = rsakeys()
@@ -111,8 +118,3 @@ if __name__ == '__main__':
     # print("-------------------------------")
     # print("private key")
     # print(str(decoded_privatekey.replace('\\n', '\n')))
-    sk, pk = rsakeys()
-    data = bytes(pk, encoding='utf-8')
-    h = SHA256.new(data)
-    hash_value = h.hexdigest()  # 获取十六进制表示的哈希值
-    print(hash_value)
