@@ -111,4 +111,8 @@ if __name__ == '__main__':
     # print("-------------------------------")
     # print("private key")
     # print(str(decoded_privatekey.replace('\\n', '\n')))
-    print(1)
+    sk, pk = rsakeys()
+    data = bytes(pk, encoding='utf-8')
+    h = SHA256.new(data)
+    hash_value = h.hexdigest()  # 获取十六进制表示的哈希值
+    print(hash_value)
