@@ -30,17 +30,18 @@ BLOCK_TIME_LIMIT = 20
 
 class Blockchain:
     # --holds the info of chain of blocks as objects
-    chain = []
+
 
     # Fixed maximum votes per block
     MAX_VOTES_PER_BLOCK = 50
 
     def __init__(self, vote_activity_id, initiator_puk, max_votes, max_days, votefile_path, new_chain=True):
+        self.chain = []
         if new_chain:
-            self.chain_folder = self.create_chain_folder(vote_activity_id, initiator_puk)
+            self.chain_folder = self.create_chain_folder(vote_activity_id, max_votes, max_days, initiator_puk)
         else:
             self.chain_folder = self.identify_existing_chain_folder()
-        self.load_blockchain()
+        # self.load_blockchain() #该函数有问题，会报错genesis没有append
         self.votefile_path = votefile_path
         self.max_votes = max_votes
         self.max_days = max_days * 24 * 60 * 60  # Convert days to seconds
@@ -48,22 +49,22 @@ class Blockchain:
         self.add_genesis(vote_activity_id, initiator_puk)
         print(f'[{current_thread().name}] Blockchain initialized')
 
-    def create_chain_folder(self, vote_activity_id, initiator_puk):
-        identifier = f"{vote_activity_id}-{initiator_puk}"
+    def create_chain_folder(self, vote_activity_id, max_votes, max_days, initiator_puk):
+        identifier = f"{vote_activity_id}-{max_votes}-{max_days}-{initiator_puk}"
         folder_name = f"chain_{identifier}"
         folder_path = os.path.join(PROJECT_PATH, 'records/chains', folder_name)
         if not os.path.exists(folder_path):
             os.makedirs(folder_path)
         return folder_path
 
-    def load_blockchain(self):
-        chain_file_path = os.path.join(self.chain_folder, 'blockchain.dat')
-        try:
-            with open(chain_file_path, 'rb') as file:
-                Blockchain.chain = pickle.load(file)
-                print(f"[{current_thread().name}] Blockchain loaded successfully.")
-        except FileNotFoundError:
-            print(f"[{current_thread().name}] No existing blockchain found in {self.chain_folder}. Starting new.")
+    # def load_blockchain(self):
+    #     chain_file_path = os.path.join(self.chain_folder, 'blockchain.dat')
+    #     try:
+    #         with open(chain_file_path, 'rb') as file:
+    #             self.chain = pickle.load(file)
+    #             print(f"[{current_thread().name}] Blockchain loaded successfully.")
+    #     except FileNotFoundError:
+    #         print(f"[{current_thread().name}] No existing blockchain found in {self.chain_folder}. Starting new.")
 
     def identify_existing_chain_folder(self):
         chains_path = os.path.join(PROJECT_PATH, 'records/chains')
@@ -85,17 +86,23 @@ class Blockchain:
     # --genesis block creation has nothing to do with blockchain class,
     # --..but has to be created when blockchain is initialized
     def add_genesis(self, vote_activity_id, initiator_puk):
+        print("****************************")
+        print(self.chain)
+        print("****************************")
         genesis = GenesisBlock(vote_activity_id, initiator_puk)
         self.chain.append(genesis)
         # Save the genesis block in the designated chain folder
-        genesis_file_path = os.path.join(self.chain_folder, 'blockchain.dat')
+        genesis_file_path = os.path.join(self.chain_folder, 'GenesisBlock.dat')
+
+        #  之后可能要改
         with open(genesis_file_path, 'wb') as genfile:
-            pickle.dump(genesis, genfile)
+            pickle.dump(genesis, genfile, protocol=2)
         print(f'[{current_thread().name}] Genesis block added to {genesis_file_path}')
 
     def set_votefile_path(self, path):
         self.votefile_path = path
 
+    '''可能有bug，还没用过这个函数'''
     @staticmethod
     def display_dat(self):
         # --print the information of blocks of the blockchain in the console
@@ -122,9 +129,9 @@ class Blockchain:
         except FileNotFoundError:
             print(f'File not found: {data_file_path}')
 
-    @staticmethod
-    def display():
-        for block in Blockchain.chain:
+
+    def display(self):
+        for block in self.chain:
             print(f'[{current_thread().name}] Block Height: {block.height}')
             print(f'[{current_thread().name}] Data in block: {block.votedata}')
             print(f'[{current_thread().name}] Total in block: {block.votecount}')
@@ -210,6 +217,8 @@ class Blockchain:
             # Check if the total votes in the chain reached max_votes
             if self.total_votes_in_chain() >= self.max_votes:
                 print(f"[{current_thread().name}] Maximum number of votes reached. Stopping the mining thread.")
+                print(self.total_votes_in_chain())
+                print(self.max_votes)
                 break
 
             # Check if the elapsed time has exceeded max_days
@@ -369,8 +378,8 @@ class Block:
         # Assume that the total votes and blocks needed are already calculated
 
         # Set the height and previous hash for the new block
-        self.height = len(Blockchain.chain)
-        self.prevHash = Blockchain.chain[-1].hash if self.height > 0 else '0'
+        self.height = len(blockchain_instance.chain)
+        self.prevHash = blockchain_instance.chain[-1].hash if self.height > 0 else '0'
 
         # Load vote data and count into the block based on votes_per_block
         self.votedata, self.votecount, self.number_of_votes = Block.load_data(blockchain_instance, votes_per_block)
@@ -391,12 +400,12 @@ class Block:
         # Calculate the block's hash with the nonce found
         self.hash = self.calcHash()
 
-        Blockchain.chain.append(self)
-        chain_file_path = os.path.join(blockchain_instance.chain_folder, 'blockchain.dat')
+        blockchain_instance.chain.append(self)
+        chain_file_path = os.path.join(blockchain_instance.chain_folder, f'block-{self.height}.dat')
         with open(chain_file_path, 'wb') as file:
-            pickle.dump(Blockchain.chain, file, protocol=2)
+            pickle.dump(self, file, protocol=2)
         if blockchain_instance.count_total_votes_in_pool() == 0:
-            Blockchain.display()
+            blockchain_instance.display()
         # Append the mined block to the blockchain
         return self  # Return the mined block
 
