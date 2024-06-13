@@ -1,3 +1,6 @@
+import os
+import pickle
+import sys
 from threading import Thread
 
 from flask import *
@@ -10,8 +13,8 @@ app.config.from_object(app.config)
 # @app.route("/")
 # def hello():
 #     return "hello world"
-
-
+PROJECT_PATH = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+PROJECT_PATH = os.path.join(PROJECT_PATH, 'vbb')
 @app.route('/enc/keys')
 def keys():
     data = enc.rsakeys()
@@ -33,6 +36,8 @@ def get_post_body():
 
 @app.route('/submit_vote', methods=['POST'])
 def submit_vote():
+
+
     data = request.json
 
     vote_activity_id = data.get('vote_activity_id')
@@ -52,6 +57,84 @@ def submit_vote():
     }
 
     return jsonify(response)
+@app.route('/data/load_blockchain', methods=['POST'])
+def load_blockchain():
+    blockchain_name = request.form.get('blockchain_name')  # 获取名为'name'的参数值
+    blockchain_name = find_blockchain_filename(PROJECT_PATH, blockchain_name)
+    chain = []
+    i = 1
+    while True:
+        chain_file_path = os.path.join(PROJECT_PATH, f'records/chains/{blockchain_name}/block-{i}.dat')
+        try:
+            with open(chain_file_path, 'rb') as file:
+                block = pickle.load(file)
+                block_dict = {
+                    'height': block.height,
+                    'votedata': block.votedata,
+                    'votecount': block.votecount,
+                    'number_of_votes': block.number_of_votes,
+                    'merkle': block.merkle,
+                    'difficulty': block.DIFFICULTY,
+                    'timeStamp': block.timeStamp,
+                    'prevHash': block.prevHash,
+                    'hash': block.hash,
+                    'nonce': block.nonce
+                }
 
+                json_block = json.dumps(block_dict)
+                chain.append(json_block)
+                i += 1
+        except FileNotFoundError:
+            break
+    chain = jsonify(chain)
+    response = make_response(chain, 200)
+    response.headers['Content-Type'] = 'application/json'
+    return response
+
+def find_blockchain_filename(root_dir, target_substring):
+    for dirpath, dirnames, filenames in os.walk(root_dir):
+        for dirname in dirnames:
+            # 判断文件夹名称是否包含特定字符串
+            if target_substring in dirname:
+                # 找到含有特定字符串的文件夹，然后输出文件夹名字
+                return dirname
+
+@app.route('/data/load_Genesis', methods=['POST'])
+def load_Genesis():
+    blockchain_name = request.form.get('blockchain_name')  # 获取名为'name'的参数值
+    blockchain_name = find_blockchain_filename(PROJECT_PATH, blockchain_name)
+    chain = []
+    chain_file_path = os.path.join(PROJECT_PATH, f'records/chains/{blockchain_name}/GenesisBlock.dat')
+    try:
+        with open(chain_file_path, 'rb') as file:
+            block = pickle.load(file)
+            block_dict = {
+                'height': block.height,
+                'votedata': block.votedata,
+                'votecount': block.votecount,
+                'number_of_votes': block.number_of_votes,
+                'merkle': block.merkle,
+                'difficulty': block.DIFFICULTY,
+                'timeStamp': block.timeStamp,
+                'prevHash': block.prevHash,
+                'hash': block.hash,
+                'nonce': block.nonce
+            }
+
+            json_block = json.dumps(block_dict)
+    except FileNotFoundError:
+        response = {
+            'error': "cannot find GenesisBlock"
+        }
+        return response
+    response = make_response(json_block, 200)
+    response.headers['Content-Type'] = 'application/json'
+    return response
 if __name__ == '__main__':
-    app.run()
+    a = find_blockchain_filename(PROJECT_PATH, "43aaee7dc8fc47201fb4ec60e53ff3ced373fba0fad0f977c6919e84785f0c")
+    print(a)
+    # print(PROJECT_PATH)
+    # print(sys.path)
+    # sys.path.append(PROJECT_PATH)
+    # print(sys.path)
+    app.run(host="0.0.0.0", port=5000)

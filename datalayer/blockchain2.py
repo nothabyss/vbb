@@ -8,14 +8,12 @@ import os
 import math
 
 # --project files
-from . import enc
-from prolayer import verification as ver
+
 
 # --path of project files
 PROJECT_PATH = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(PROJECT_PATH)
 
-from votetest import append_random_votes
 
 # Global lock for thread safety
 lock = Lock()
@@ -96,7 +94,7 @@ class Blockchain:
 
         #  之后可能要改
         with open(genesis_file_path, 'wb') as genfile:
-            pickle.dump(genesis, genfile, protocol=2)
+            pickle.dump(genesis, genfile)
         print(f'[{current_thread().name}] Genesis block added to {genesis_file_path}')
 
     def set_votefile_path(self, path):
@@ -279,6 +277,7 @@ class Blockchain:
         return blocks_needed, votes_per_block
 
 
+
 class Block:
     """
     The basic structure of block that will be created when the block is generated
@@ -403,11 +402,12 @@ class Block:
         blockchain_instance.chain.append(self)
         chain_file_path = os.path.join(blockchain_instance.chain_folder, f'block-{self.height}.dat')
         with open(chain_file_path, 'wb') as file:
-            pickle.dump(self, file, protocol=2)
+            pickle.dump(self, file)
         if blockchain_instance.count_total_votes_in_pool() == 0:
             blockchain_instance.display()
         # Append the mined block to the blockchain
         return self  # Return the mined block
+
 
 
 class GenesisBlock(Block):
@@ -422,3 +422,5 @@ class GenesisBlock(Block):
     def calcHash(self):
         return sha256((str(self.vote_activity_id) + str(self.timeStamp) + str(self.initiator_puk) + str(self.version)).encode('utf-8')).hexdigest()
 
+if __name__ == '__main__':
+    print(PROJECT_PATH)
