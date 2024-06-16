@@ -9,7 +9,7 @@ import time
 from random import random
 from threading import Thread
 from datalayer.blockchain2 import Blockchain
-
+# import multiprocessing
 PROJECT_PATH = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 votefile_path = os.path.join(PROJECT_PATH, 'vbb', 'records', 'vote_pool')
 
@@ -59,7 +59,8 @@ def main():
             # print("----------------------------------")
             # print(f"this is a new blockchain object {voting_activity.chain}")
         for blockchain in blockchain_objects:
-            mining_thread = Thread(target=worker,  args=(blockchain[0],))  # Pass the function without calling it
+            mining_thread = Thread(target=worker, args=(blockchain[0],))
+            # mining_thread = Thread(target=worker,  args=(blockchain[0],))  # Pass the function without calling it
             mining_thread.start()
             threads.append((mining_thread, blockchain[1]))
 

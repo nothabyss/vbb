@@ -16,7 +16,7 @@ sys.path.append(PROJECT_PATH)
 
 
 # Global lock for thread safety
-lock = Lock()
+
 
 # --<<Global variables>>
 # --cryptographic difficulty
