@@ -5,7 +5,7 @@ from threading import Thread
 
 from flask import *
 import datalayer.enc as enc
-from vbb.datalayer.blockchain import Blockchain
+from datalayer.blockchain2 import Blockchain
 
 app=Flask("block")
 app.config.from_object(app.config)
