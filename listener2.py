@@ -11,10 +11,6 @@ from datalayer.blockchain2 import Blockchain
 
 PROJECT_PATH = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 votefile_path = os.path.join(PROJECT_PATH, 'vbb', 'records', 'vote_pool')
-output_path = os.path.join(PROJECT_PATH, 'vbb', 'records', 'dat_files')
-
-if not os.path.exists(output_path):
-    os.makedirs(output_path)
 
 lock = Lock()
 processed_files = set()
@@ -23,15 +19,16 @@ def count_csv_files(votefile_path):
     csv_files = [file for file in os.listdir(votefile_path) if file.endswith('.csv')]
     return csv_files
 
-def worker(blockchain_instance, output_file, csv_file):
+def worker(blockchain_instance):
     blockchain_instance.mine_if_needed()
-    blockchain_instance.save_to_file(output_file)
-    
+    blockchain_instance.save_blocks()
+
     # Cleanup: Remove empty CSV files after processing
+    csv_file_path = blockchain_instance.csv_file_path
     lock.acquire()
-    if os.stat(output_file.replace('.dat', '.csv')).st_size == 0:
-        os.remove(output_file.replace('.dat', '.csv'))
-        print(f"Removed empty CSV file: {csv_file}")
+    if os.stat(csv_file_path).st_size == 0:
+        os.remove(csv_file_path)
+        print(f"Removed empty CSV file: {os.path.basename(csv_file_path)}")
     lock.release()
 
 def monitor_directory():
@@ -47,20 +44,24 @@ def monitor_directory():
                 file_path = os.path.join(votefile_path, csv_file)
                 print("Processing:", csv_file)
 
-                # Use a default configuration for Blockchain
-                vote_id = "default_vote_id"
-                max_votes = 30  # Default maximum votes
-                max_days = 7  # Default maximum days
-                public_key = "default_public_key"
+                # Parse the filename to get the details
+                try:
+                    file_parts = csv_file.replace('.csv', '').split('-')
+                    vote_id = file_parts[0]
+                    max_votes = int(file_parts[1])
+                    max_days = int(file_parts[2])
+                    public_key = file_parts[3]
+                except (IndexError, ValueError) as e:
+                    print(f"Error parsing file {csv_file}: {e}")
+                    continue
 
                 # Create a Blockchain object
                 blockchain_instance = Blockchain(vote_id, public_key, max_votes, max_days, file_path)
-                output_file = os.path.join(output_path, f"{time.strftime('%Y%m%d-%H%M%S')}-{csv_file.replace('.csv', '.dat')}")
                 print(f"Blockchain object created: {blockchain_instance}")
                 print(f"Chain: {blockchain_instance.chain}")
 
                 # Start a thread for mining
-                mining_thread = Thread(target=worker, args=(blockchain_instance, output_file, csv_file))
+                mining_thread = Thread(target=worker, args=(blockchain_instance,))
                 mining_thread.start()
             else:
                 lock.release()
