@@ -23,7 +23,7 @@ lock = Lock()
 DIFFICULTY = 3
 
 # --frequency of mining of blocks seconds
-BLOCK_TIME_LIMIT = 20
+BLOCK_TIME_LIMIT = 3
 
 
 class Blockchain:
@@ -210,6 +210,41 @@ class Blockchain:
         elapsed_time = time.time() - self.start_time
         return elapsed_time > self.max_days
 
+    # def mine_if_needed(self):
+    #
+    #         # Check if the total votes in the chain reached max_votes
+    #     if self.total_votes_in_chain() >= self.max_votes:
+    #         print(f"[{current_thread().name}] Maximum number of votes reached. Stopping the mining thread.")
+    #         print(self.total_votes_in_chain())
+    #         print(self.max_votes)
+    #         return
+    #
+    #     # Check if the elapsed time has exceeded max_days
+    #     if self.elapsed_time_exceeded():
+    #         print(f"[{current_thread().name}] Maximum time exceeded. Stopping the mining thread.")
+    #
+    #
+    #     if self.should_mine():
+    #         total_votes = self.count_total_votes_in_pool()
+    #         blocks_to_mine, _ = self.calculate_block_distribution(total_votes)
+    #
+    #         while total_votes > 0 and blocks_to_mine > 0:
+    #             votes_per_block = min(Blockchain.MAX_VOTES_PER_BLOCK, total_votes)
+    #             print(f"[{current_thread().name}] Mining a block with {votes_per_block} votes...")
+    #
+    #             new_block = Block()
+    #             new_block.mineblock(self, votes_per_block)
+    #
+    #             total_votes = self.count_total_votes_in_pool()  # Update the total votes after mining a block
+    #             blocks_to_mine -= 1  # Decrement the number of blocks to mine
+    #
+    #             print(f"[{current_thread().name}] Block mined. {total_votes} votes remaining, {blocks_to_mine} blocks to mine.")
+    #     else:
+    #         time.sleep(BLOCK_TIME_LIMIT)
+    #         # Uncomment if need add votes
+    #         # append_random_votes(self.votefile_path, num_votes=10)
+    #         print(f"[{current_thread().name}] No mining needed at this time.")
+    #     return
     def mine_if_needed(self):
         while True:
             # Check if the total votes in the chain reached max_votes
@@ -217,7 +252,7 @@ class Blockchain:
                 print(f"[{current_thread().name}] Maximum number of votes reached. Stopping the mining thread.")
                 print(self.total_votes_in_chain())
                 print(self.max_votes)
-                break
+                return
 
             # Check if the elapsed time has exceeded max_days
             if self.elapsed_time_exceeded():
@@ -244,6 +279,7 @@ class Blockchain:
                 # Uncomment if need add votes
                 # append_random_votes(self.votefile_path, num_votes=10)
                 print(f"[{current_thread().name}] No mining needed at this time.")
+                return
 
     def should_mine(self):
         total_votes = self.count_total_votes_in_pool()

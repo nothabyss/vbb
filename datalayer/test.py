@@ -1,5 +1,5 @@
 import unittest
-from blockchain import Blockchain, Block
+from blockchain2 import Blockchain, Block
 
 
 class TestBlockChain(unittest.TestCase):
