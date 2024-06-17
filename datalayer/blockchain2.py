@@ -351,10 +351,11 @@ class Block:
     def calcHash(self):
         return sha256((str(self.merkle) + str(self.timeStamp) + str(self.nonce) + str(self.prevHash)).encode('utf-8')).hexdigest()
 
-    @staticmethod
-    def load_data(blockchain_instance, votes_per_block):
+
+    def load_data(self, blockchain_instance, votes_per_block):
         votelist = []
         votecount = {}
+
         count = 0
         try:
             with open(blockchain_instance.votefile_path, 'r', newline='', encoding='UTF-8') as votepool:
@@ -423,7 +424,7 @@ class Block:
         self.prevHash = blockchain_instance.chain[-1].hash if self.height > 0 else '0'
 
         # Load vote data and count into the block based on votes_per_block
-        self.votedata, self.votecount, self.number_of_votes = Block.load_data(blockchain_instance, votes_per_block)
+        self.votedata, self.votecount, self.number_of_votes = Block.load_data(self, blockchain_instance, votes_per_block)
 
         # Update the vote pool by removing the votes that are now loaded into the block
         blockchain_instance.update_votepool(self.votedata)
