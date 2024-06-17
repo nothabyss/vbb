@@ -250,12 +250,18 @@ class Blockchain:
             # Check if the total votes in the chain reached max_votes
             if self.total_votes_in_chain() >= self.max_votes:
                 print(f"[{current_thread().name}] Maximum number of votes reached. Stopping the mining thread.")
+
+                votefile_path = self.votefile_path
+                os.remove(votefile_path)
+
                 print(self.total_votes_in_chain())
                 print(self.max_votes)
                 return
 
             # Check if the elapsed time has exceeded max_days
             if self.elapsed_time_exceeded():
+                votefile_path = self.votefile_path
+                os.remove(votefile_path)
                 print(f"[{current_thread().name}] Maximum time exceeded. Stopping the mining thread.")
                 break
 

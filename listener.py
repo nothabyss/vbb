@@ -21,9 +21,9 @@ def count_csv_files(votefile_path):
 
 def worker(blockchain_instance):
     blockchain_instance.mine_if_needed()
-    votefile_path = blockchain_instance.votefile_path
-    if os.stat(votefile_path).st_size == 0:
-        os.remove(votefile_path)
+    # votefile_path = blockchain_instance.votefile_path
+    # if os.stat(votefile_path).st_size == 0:
+    #     os.remove(votefile_path)
     # Cleanup: Remove empty CSV files after processing
     # lock.acquire()
     # lock.release()
