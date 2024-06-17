@@ -6,7 +6,7 @@
 '''
 import os
 import time
-from threading import Thread
+from threading import Thread, Lock
 from datalayer.blockchain2 import Blockchain
 
 PROJECT_PATH = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -16,32 +16,40 @@ output_path = os.path.join(PROJECT_PATH, 'vbb', 'records', 'dat_files')
 if not os.path.exists(output_path):
     os.makedirs(output_path)
 
+lock = Lock()
+processed_files = set()
+
 def count_csv_files(votefile_path):
     csv_files = [file for file in os.listdir(votefile_path) if file.endswith('.csv')]
     return csv_files
 
-def worker(blockchain_instance, output_file):
+def worker(blockchain_instance, output_file, csv_file):
     blockchain_instance.mine_if_needed()
     blockchain_instance.save_to_file(output_file)
-
-def main():
-    processed_files = set()
     
+    # Cleanup: Remove empty CSV files after processing
+    lock.acquire()
+    if os.stat(output_file.replace('.dat', '.csv')).st_size == 0:
+        os.remove(output_file.replace('.dat', '.csv'))
+        print(f"Removed empty CSV file: {csv_file}")
+    lock.release()
+
+def monitor_directory():
     while True:
         csv_files = count_csv_files(votefile_path)
-        new_files = [file for file in csv_files if file not in processed_files]
         
-        if new_files:
-            print("Detected new CSV files:", new_files)
-            threads = []
-
-            for csv_file in new_files:
+        for csv_file in csv_files:
+            lock.acquire()
+            if csv_file not in processed_files:
+                processed_files.add(csv_file)
+                lock.release()
+                
                 file_path = os.path.join(votefile_path, csv_file)
                 print("Processing:", csv_file)
 
                 # Use a default configuration for Blockchain
                 vote_id = "default_vote_id"
-                max_votes = 100  # Default maximum votes
+                max_votes = 30  # Default maximum votes
                 max_days = 7  # Default maximum days
                 public_key = "default_public_key"
 
@@ -52,22 +60,17 @@ def main():
                 print(f"Chain: {blockchain_instance.chain}")
 
                 # Start a thread for mining
-                mining_thread = Thread(target=worker, args=(blockchain_instance, output_file))
+                mining_thread = Thread(target=worker, args=(blockchain_instance, output_file, csv_file))
                 mining_thread.start()
-                threads.append((mining_thread, csv_file, file_path))
-
-                processed_files.add(csv_file)
-
-            # Wait for all threads to complete
-            for thread, csv_file, file_path in threads:
-                thread.join()  # Wait for the thread to complete
-                # Remove the CSV file if it's empty after processing
-                if os.stat(file_path).st_size == 0:
-                    os.remove(file_path)
-                    print(f"Removed empty CSV file: {csv_file}")
+            else:
+                lock.release()
 
         time.sleep(3)  # Check for new files every 3 seconds
 
+def main():
+    monitor_thread = Thread(target=monitor_directory)
+    monitor_thread.start()
+    monitor_thread.join()
+
 if __name__ == '__main__':
     main()
-
