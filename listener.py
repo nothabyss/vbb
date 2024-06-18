@@ -57,7 +57,7 @@ def main():
             else:
                 continue
         print("***************************")
-        time.sleep(20)  # Check for new files every 20 seconds
+        time.sleep(5)  # Check for new files every 20 seconds
 
 
 

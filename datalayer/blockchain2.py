@@ -299,7 +299,7 @@ class Blockchain:
         try:
             with open(self.votefile_path, 'r', newline='', encoding='UTF-8') as votepool:
                 csvreader = csv.reader(votepool)
-                count = sum(1 for row in csvreader)  # Sum the rows to get the total count
+                count = sum(1 for row in csvreader if any(row))  # Sum the rows to get the total count
         except (IOError, IndexError):
             print(f"[{current_thread().name}] Error reading votefile.csv")
         return count
