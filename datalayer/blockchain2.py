@@ -166,6 +166,9 @@ class Blockchain:
             with open(self.votefile_path, 'w', newline='', encoding='UTF-8') as file:
                 csv.writer(file).writerows(remaining_votes)
 
+            with open(self.votefile_path, 'w', newline='') as f:
+                f.truncate(0)  # 清空文件内容
+
         except Exception as e:
             print(f'[{current_thread().name}] Error updating votefile.csv: {e}')
 
@@ -285,7 +288,7 @@ class Blockchain:
                 # Uncomment if need add votes
                 # append_random_votes(self.votefile_path, num_votes=10)
                 print(f"[{current_thread().name}] No mining needed at this time.")
-                return
+
 
     def should_mine(self):
         total_votes = self.count_total_votes_in_pool()
