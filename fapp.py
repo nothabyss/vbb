@@ -1,5 +1,6 @@
 import os
 import pickle
+import re
 import sys
 from threading import Thread
 
@@ -60,7 +61,8 @@ def submit_vote():
 @app.route('/data/load_blockchain', methods=['POST'])
 def load_blockchain():
     blockchain_name = request.form.get('blockchain_name')  # 获取名为'name'的参数值
-    blockchain_name = find_blockchain_filename(PROJECT_PATH, blockchain_name)
+    blockchain_id = request.form.get('blockchain_id')  # 获取名为'name'的参数值
+    blockchain_name = find_blockchain_filename(PROJECT_PATH, blockchain_name, blockchain_id)
     chain = []
     i = 1
     while True:
@@ -91,11 +93,20 @@ def load_blockchain():
     response.headers['Content-Type'] = 'application/json'
     return response
 
-def find_blockchain_filename(root_dir, target_substring):
+def find_id(id, folder_name):
+    match = re.search(r'chain_(\d+)', folder_name)
+
+    if match:
+        number_after_chain = match.group(1)
+        return number_after_chain
+    else:
+        print("cannot find the blockchain, please check your name")
+        return 0
+def find_blockchain_filename(root_dir, target_substring, id):
     for dirpath, dirnames, filenames in os.walk(root_dir):
         for dirname in dirnames:
             # 判断文件夹名称是否包含特定字符串
-            if target_substring in dirname:
+            if target_substring in dirname and id == find_id(id, dirname):
                 # 找到含有特定字符串的文件夹，然后输出文件夹名字
                 return dirname
 
@@ -131,8 +142,8 @@ def load_Genesis():
     response.headers['Content-Type'] = 'application/json'
     return response
 if __name__ == '__main__':
-    a = find_blockchain_filename(PROJECT_PATH, "43aaee7dc8fc47201fb4ec60e53ff3ced373fba0fad0f977c6919e84785f0c")
-    print(a)
+    # a = find_blockchain_filename(PROJECT_PATH, "23aaee7dc8fc47201fb4ec60e53ff3ced373fba0fad0f977c6919e84785f0c", "200")
+    # print(a)
     # print(PROJECT_PATH)
     # print(sys.path)
     # sys.path.append(PROJECT_PATH)
