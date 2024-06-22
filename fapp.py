@@ -162,7 +162,7 @@ def delete_csv():
             print (f"{completed_csv}  deleted")
             return make_response("Success", 200)
         else:
-            return make_response("Error", 201)
+            return make_response("Not_empty", 201)
     else:
         print(f"{completed_csv}  not found")
         return make_response("Error", 201)

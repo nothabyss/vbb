@@ -332,14 +332,12 @@ class Block:
     The basic structure of block that will be created when the block is generated
     the data in the block will be updated later and block will be mined then.
     """
-    def __init__(self, height=0, votes=0, merkle='0', tree=None, timeStamp=0, prevHash='0', representative_pow=0, hash='Genesis'):
-        if tree is None:
-            tree = []
+    def __init__(self, height=0, votes=0, merkle='0',  timeStamp=0, prevHash='0', representative_pow=0, hash='Genesis'):
+
         self.height = height  # len(Blockchain.chain-1)
         self.votedata = []  # loadvote()
         self.votecount = []  # loadvote()
         self.number_of_votes = votes  # votecount per block
-        self.tree = tree
         self.merkle = merkle  # calculateMerkleRoot()
         self.DIFFICULTY = DIFFICULTY  # cryptographic difficulty
         self.timeStamp = time.time()  # time()
@@ -407,7 +405,7 @@ class Block:
             return hash_value, [hash_value]
 
         vote_hashes = [sha256(str(vote).encode()).hexdigest() for vote in votedata]
-        all_hashes = vote_hashes.copy()  # Store all nodes in a list
+
 
         while len(vote_hashes) > 1:
             if len(vote_hashes) % 2 == 1:
@@ -418,10 +416,10 @@ class Block:
                 concatenated = vote_hashes[i] + vote_hashes[i + 1]
                 new_hash = sha256(concatenated.encode()).hexdigest()
                 new_hashes.append(new_hash)
-            all_hashes.extend(new_hashes)  # Add new nodes to the list
+
             vote_hashes = new_hashes
 
-        return vote_hashes[0], all_hashes  # Return the Merkle root and all nodes
+        return vote_hashes[0]  # Return the Merkle root and all nodes
 
     def mineblock(self, blockchain_instance, votes_per_block):
         # Assume that the total votes and blocks needed are already calculated
@@ -437,7 +435,7 @@ class Block:
         blockchain_instance.update_votepool(self.votedata)
 
         # Calculate the Merkle root for the vote data (implement this function if necessary)
-        self.merkle, self.tree = self.merkleRoot()
+        self.merkle = self.merkleRoot()
 
         # Set the block's difficulty and timestamp
         self.DIFFICULTY = DIFFICULTY
