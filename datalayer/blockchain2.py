@@ -33,8 +33,10 @@ class Blockchain:
     # Fixed maximum votes per block
     MAX_VOTES_PER_BLOCK = 50
 
-    def __init__(self, vote_activity_id, initiator_puk, max_votes, max_days, votefile_path, new_chain=True):
-        self.chain = []
+    def __init__(self, vote_activity_id, initiator_puk, max_votes, max_days, votefile_path, new_chain=True, chain=None):
+        if chain is None:
+            chain = []
+        self.chain = chain
         if new_chain:
             self.chain_folder = self.create_chain_folder(vote_activity_id, max_votes, max_days, initiator_puk)
         else:
@@ -42,8 +44,10 @@ class Blockchain:
         # self.load_blockchain() #该函数有问题，会报错genesis没有append
         self.votefile_path = votefile_path
         self.max_votes = max_votes
-        self.max_days = max_days * 24 * 60 * 60  # Convert days to seconds
-        self.start_time = time.time()
+        self.max_days = max_days # Convert days to seconds
+        # self.start_time = time.time()
+        if new_chain == False:
+            return
         self.add_genesis(vote_activity_id, initiator_puk)
         print(f'[{current_thread().name}] Blockchain initialized')
 
@@ -205,13 +209,13 @@ class Blockchain:
 
         return True
 
-    def total_votes_in_chain(self):
-        total_votes = sum(block.number_of_votes for block in self.chain)
-        return total_votes
-
-    def elapsed_time_exceeded(self):
-        elapsed_time = time.time() - self.start_time
-        return elapsed_time > self.max_days
+    # def total_votes_in_chain(self):
+    #     total_votes = sum(block.number_of_votes for block in self.chain)
+    #     return total_votes
+    #
+    # def elapsed_time_exceeded(self):
+    #     elapsed_time = time.time() - self.start_time
+    #     return elapsed_time > self.max_days
 
     # def mine_if_needed(self):
     #
@@ -251,22 +255,22 @@ class Blockchain:
     def mine_if_needed(self):
         while True:
             # Check if the total votes in the chain reached max_votes
-            if self.total_votes_in_chain() >= self.max_votes:
-                print(f"[{current_thread().name}] Maximum number of votes reached. Stopping the mining thread.")
+            # if self.total_votes_in_chain() >= self.max_votes:
+            #     print(f"[{current_thread().name}] Maximum number of votes reached. Stopping the mining thread.")
+            #
+            #     votefile_path = self.votefile_path
+            #     os.remove(votefile_path)
+            #
+            #     print(self.total_votes_in_chain())
+            #     print(self.max_votes)
+            #     return
 
-                votefile_path = self.votefile_path
-                os.remove(votefile_path)
-
-                print(self.total_votes_in_chain())
-                print(self.max_votes)
-                return
-
-            # Check if the elapsed time has exceeded max_days
-            if self.elapsed_time_exceeded():
-                votefile_path = self.votefile_path
-                os.remove(votefile_path)
-                print(f"[{current_thread().name}] Maximum time exceeded. Stopping the mining thread.")
-                break
+            # # Check if the elapsed time has exceeded max_days
+            # if self.elapsed_time_exceeded():
+            #     votefile_path = self.votefile_path
+            #     os.remove(votefile_path)
+            #     print(f"[{current_thread().name}] Maximum time exceeded. Stopping the mining thread.")
+            #     break
 
             if self.should_mine():
                 total_votes = self.count_total_votes_in_pool()

@@ -13,7 +13,6 @@ PROJECT_PATH = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 votefile_path = os.path.join(PROJECT_PATH, 'vbb', 'records', 'vote_pool')
 
 
-processed_files = set()
 
 def count_csv_files(votefile_path):
     csv_files = [file for file in os.listdir(votefile_path) if file.endswith('.csv')]
@@ -29,7 +28,7 @@ def worker(blockchain_instance):
     # lock.release()
 
 def main():
-
+    processed_files = set()
     while True:
         csv_files = count_csv_files(votefile_path)
         
