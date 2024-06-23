@@ -467,8 +467,9 @@ class GenesisBlock(Block):
         self.vote_activity_id = vote_activity_id
         self.initiator_puk = initiator_puk
         self.version = version
-        self.hash = self.calcHash()
         self.timeStamp = time.time()
+        self.hash = self.calcHash()
+
 
     def calcHash(self):
         print(self.vote_activity_id)
