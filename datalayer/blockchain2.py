@@ -273,6 +273,9 @@ class Blockchain:
             #     break
 
             if self.should_mine():
+                if os.path.exists(self.votefile_path) == False:
+                    print("this votefile has been deleted")
+                    break
                 total_votes = self.count_total_votes_in_pool()
                 blocks_to_mine, _ = self.calculate_block_distribution(total_votes)
 
@@ -468,6 +471,10 @@ class GenesisBlock(Block):
         self.timeStamp = time.time()
 
     def calcHash(self):
+        print(self.vote_activity_id)
+        print(str(self.timeStamp))
+        print(str(self.initiator_puk))
+        print(str(self.version))
         return sha256((str(self.vote_activity_id) + str(self.timeStamp) + str(self.initiator_puk) + str(self.version)).encode('utf-8')).hexdigest()
 
 if __name__ == '__main__':

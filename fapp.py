@@ -8,8 +8,8 @@ from threading import Thread
 from flask import *
 import datalayer.enc as enc
 from datalayer.blockchain2 import Blockchain
-from vbb.ftools import find_blockchain_filename, msg2java
-from vbb.prolayer.verification import sync_blocks, verfiy_merkle, verify_block
+from ftools import find_blockchain_filename, msg2java
+from prolayer.verification import sync_blocks, verfiy_merkle, verify_block
 
 app=Flask("block")
 app.config.from_object(app.config)
@@ -22,14 +22,17 @@ PROJECT_PATH = os.path.join(PROJECT_PATH, 'vbb')
 @app.route('/enc/keys')
 def keys():
     data = enc.rsakeys()
-    response = make_response(jsonify(data), 200)
+    rs = msg2java("Success", data)
+    response = make_response(rs.toJSON(), 200)
     response.headers['Content-Type'] = 'application/json'
     return response
+
 @app.route('/enc/hash_public_key', methods=['POST'])
 def hash_public_key():
     public_key = request.form.get('public_key')  # 获取名为'name'的参数值
     hash_pk = enc.hash_public_key(public_key)
-    response = make_response(jsonify(hash_pk), 200)
+    rs = msg2java("Success", hash_pk)
+    response = make_response(rs.toJSON(), 200)
     response.headers['Content-Type'] = 'application/json'
     return response
 
@@ -109,8 +112,10 @@ def load_blockchain():
                 i += 1
         except FileNotFoundError:
             break
-    chain = jsonify(chain)
-    response = make_response(chain, 200)
+    # chain = json.dumps(chain)
+    rs = msg2java("Success", chain)
+    response = make_response(rs.toJSON(), 200)
+    # chain = jsonify(chain)
     response.headers['Content-Type'] = 'application/json'
     return response
 
@@ -142,11 +147,12 @@ def load_Genesis():
 
             json_block = json.dumps(block_dict)
     except FileNotFoundError:
-        response = {
-            'error': "cannot find GenesisBlock"
-        }
+        rs = msg2java("Error", "FileNotFoundError")
+        response = make_response(rs.toJSON(), 201)
         return response
-    response = make_response(json_block, 200)
+    rs = msg2java("Success", json_block)
+    response = make_response(rs.toJSON(), 200)
+    # response = make_response(json_block, 200)
     response.headers['Content-Type'] = 'application/json'
     return response
 
@@ -160,12 +166,18 @@ def delete_csv():
         if os.stat(completed_csv).st_size == 0:
             os.remove(completed_csv)
             print (f"{completed_csv}  deleted")
-            return make_response("Success", 200)
+            rs = msg2java("Success")
+            response = make_response(rs.toJSON(), 200)
+            return response
         else:
-            return make_response("Not_empty", 201)
+            rs = msg2java("Error", "Not_empty")
+            response = make_response(rs.toJSON(), 201)
+            return response
     else:
+        rs = msg2java("Error", f"{completed_csv}  not found")
+        response = make_response(rs.toJSON(), 201)
         print(f"{completed_csv}  not found")
-        return make_response("Error", 201)
+        return response
 
 @app.route('/protocol/delete_chain', methods=['POST'])
 def delete_a_voting_activity():
@@ -175,10 +187,14 @@ def delete_a_voting_activity():
     if os.path.exists(chain_folder_path) and os.path.isdir(chain_folder_path):  # 检查路径是否存在且为文件夹
         shutil.rmtree(chain_folder_path)
         print (f"{chain_folder_path} folder deleted")
-        return make_response("Success", 200)
+        rs = msg2java("Success")
+        response = make_response(rs.toJSON(), 200)
+        return response
     else:
         print(f"{chain_folder_path} folder not found or not a directory")
-        return make_response("Error", 201)
+        rs = msg2java("Error", f"{chain_folder_path} folder not found or not a directory")
+        response = make_response(rs.toJSON(), 201)
+        return response
 
 @app.route('/protocol/syn_blocks', methods=['POST'])
 def syn_blocks():
@@ -209,11 +225,11 @@ def syn_blocks():
     reload_blockchain = Blockchain(attributes[0], attributes[3], attributes[1], attributes[2], None, False, chain)
     index, flag = sync_blocks(reload_blockchain)
     if flag == True:
-        result = "Success"
-        response = make_response(result, 200)
+        rs = msg2java("Success")
+        response = make_response(rs.toJSON(), 200)
     else:
-        result = str(index)
-        response = make_response(result, 201)
+        rs = msg2java("Error", str(index))
+        response = make_response(rs.toJSON(), 201)
     return response
 
 @app.route('/protocol/verify_blocks', methods=['POST'])
@@ -241,11 +257,12 @@ def verify_blocks():
     for block in chain:
         result = verify_block(block)
         if result == 0:
-            result = "Error"
-            response = make_response(result, 200)
+            rs = msg2java("Error")
+            response = make_response(rs.toJSON(), 201)
             break
         else:
-            response = make_response("Success", 201)
+            rs = msg2java("Success")
+            response = make_response(rs.toJSON(), 200)
     return response
 
 @app.route('/protocol/verify_merkles', methods=['POST'])
@@ -273,11 +290,12 @@ def verify_merkles():
     for block in chain:
         result = verfiy_merkle(block)
         if result == 0:
-            result = "Error"
-            response = make_response(result, 200)
+            rs = msg2java("Error")
+            response = make_response(rs.toJSON(), 201)
             break
         else:
-            response = make_response("Success", 201)
+            rs = msg2java("Success")
+            response = make_response(rs.toJSON(), 200)
     return response
 
 if __name__ == '__main__':

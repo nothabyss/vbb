@@ -15,9 +15,10 @@ def rsakeys():
     publickey = privatekey.publickey()
     decoded_publickey = publickey.export_key().decode('utf-8')
     decoded_privatekey = privatekey.export_key().decode('utf-8')
-    
-    publickey = str(decoded_publickey.replace('\\n', '\n'))
-    privatekey = str(decoded_privatekey.replace('\\n', '\n'))   
+
+    # output_string = input_string.replace("\n", "")
+    publickey = str(decoded_publickey.replace('\n', ''))
+    privatekey = str(decoded_privatekey.replace('\n', ''))
 
     return privatekey, publickey
 
@@ -91,13 +92,38 @@ def hash_public_key(publick_key,):
     hash_value = h.hexdigest()  # 获取十六进制表示的哈希值
     return hash_value
 
+
+
+def add_newlines2(text, line_length=64):
+    # 在每个line_length的位置插入换行符
+    result = ''.join(text[i:i+line_length] + '\n' for i in range(0, len(text), line_length))
+    return '\n' + result
+def pre_impose_pk(pk):
+    pk = "-----BEGIN PUBLIC KEY-----" + add_newlines2(pk) + "-----END PUBLIC KEY-----"
+    return pk
+def pre_impose_sk(sk):
+    sk = "-----BEGIN PRIVATE KEY-----" + add_newlines2(sk) + "-----END PRIVATE KEY-----"
+    return sk
+
+
 if __name__ == '__main__':
     # ---------
-    # sk, pk = rsakeys()
-    sk = '''-----BEGIN RSA PRIVATE KEY-----\nMIICXAIBAAKBgQDBwRKyMv9mENPMX/N4/hvAHgZiWYMDn2s+Gabp/2bNt4WoXi4w\n8GNL1gOM7Mc7Bua43nseC7euGTQbDVT+6y8RndssQe6vJizjwflzkERtUXJIRcH5\nhMbnT5Q5YAaOl5kGmNurWa8cAumaFvdfPYlYiFSWXE4y7+MRs+IOy0DM1wIDAQAB\nAoGAQysLL7KlPn1j50x2K8Iv3ZyrCupMFHPuKiObbTBos7VFBRbNPZMAYVhqd67X\n7HsafglGtiZKwXSkTyKCjjL66C3kZ/44PSlAgppjNrkzwe3qUT0b8kOZUkrNzccw\nT0z+sJO/vddcsba9tiYuAWxZNbPUPgvFr5qkqEb6IjZ1QU0CQQDKJh+ynHfD2fpO\np191hZwR48CRsDiHsred669YTzOt7qpmWNk9um4NeijFaBmmQ5gNIERXAuJc9bHm\nUwh2ppilAkEA9V5092NwyzynZkNjvyHfINldIl+5I9hN9UDM/r2KkoUee+Ub9SHK\nHinwKXvZvJWfnMzTmdArdaUQTRVonQEaywJBAKT/ARhURh0BqiDQ1EWkTIL9loxT\nfZCk+uJXIMO/wbrR9xuaoZaUuIcfkm+uTGE9ArqT/7PVktW1ZQNN+rZ9vFECQCNH\njIvReXNPakZS5DGkHh/sAO8jUkxsGnFr+s2Z1SXSDBsGSynIzPXfU8+zJhBudv+l\nl7si6kzFCf37WQpSEVcCQAYWjPwLK7jqxw4WN7Df1iENZGkz14meRnL7HBP804zy\nHZwZYkaRU21RvkgXGZPrvu0CmpRW85xJTa7gZ7Z7uZE=\n-----END RSA PRIVATE KEY-----'''
-    pk = '''-----BEGIN PUBLIC KEY-----\nMIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDBwRKyMv9mENPMX/N4/hvAHgZi\nWYMDn2s+Gabp/2bNt4WoXi4w8GNL1gOM7Mc7Bua43nseC7euGTQbDVT+6y8Rndss\nQe6vJizjwflzkERtUXJIRcH5hMbnT5Q5YAaOl5kGmNurWa8cAumaFvdfPYlYiFSW\nXE4y7+MRs+IOy0DM1wIDAQAB\n-----END PUBLIC KEY-----'''
-    text = "this is a test"
+    sk, pk = rsakeys()
 
+    # pk = "-----BEGIN PUBLIC KEY-----\nMIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCGS2QVt4rKpnFpm2g69XwaZI2u\nf1RsE8INDccIsqdibHm2Zz7zvfo+rDOgDwSZ89kXxCwJiKvapMJfj6P7/hzvvSF4\nGPjyYOHzcSpgXeyC+tNylSAxKTekCiLbtaZ0Wu9jljwZDdz4B/V/TN8aTRW8LRC9\nkgauakd4LEZkklgAuQIDAQAB\n-----END PUBLIC KEY-----"
+    # pk2 = "\nMIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCGS2QVt4rKpnFpm2g69XwaZI2u\nf1RsE8INDccIsqdibHm2Zz7zvfo+rDOgDwSZ89kXxCwJiKvapMJfj6P7/hzvvSF4\nGPjyYOHzcSpgXeyC+tNylSAxKTekCiLbtaZ0Wu9jljwZDdz4B/V/TN8aTRW8LRC9\nkgauakd4LEZkklgAuQIDAQAB\n"
+    # pk2= str(pk2.replace('\n', ''))
+    # pk2 = "-----BEGIN PUBLIC KEY-----" + add_newlines2(pk2) + "-----END PUBLIC KEY-----"
+    # # pk = "-----BEGIN PUBLIC KEY-----" + add_newlines2(pk) + "-----END RSA PUBLIC KEY-----"
+    # print(repr(pk))
+    # print(repr(pk2))
+    # print(pk2 == pk)
+
+
+
+
+    text = "this is a test"
+    print(len("mx6zfk6c++3/dTGNkTJiRTXyj+8/k9kU47Zg2umsySqgVpWAklS1o7l8yQIDAQAB"))
     en = encrypt(pk, text)
     de = decrypt(sk, en)
     ds = digital_sign(sk, text)

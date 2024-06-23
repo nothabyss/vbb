@@ -7,6 +7,8 @@ def sync_blocks(blockchain):
         if blockchain[i].prevHash == blockchain[i-1].calcHash():
             continue
         else:
+            print(blockchain[i].prevHash)
+            print(blockchain[i-1].calcHash())
             return i, False
 
     return 0, True
