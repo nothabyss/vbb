@@ -36,6 +36,22 @@ def hash_public_key():
     response.headers['Content-Type'] = 'application/json'
     return response
 
+@app.route('/protocol/many_hash', methods=['POST'])
+def many_hash():
+    vote_activity_id = request.form.get('vote_activity_id')  # 获取名为'name'的参数值
+    public_key = request.form.get('public_key')  # 获取名为'name'的参数值
+    max_votes = request.form.get('max_votes')
+    auth_keys = []
+    for i in range(int(max_votes)):
+        auth_key = public_key + vote_activity_id + str(i)
+        auth_key_hash = enc.hash_public_key(auth_key)
+        auth_keys.append(auth_key_hash)
+    rs = msg2java("Success", auth_keys)
+    response = make_response(rs.toJSON(), 200)
+    response.headers['Content-Type'] = 'application/json'
+    return response
+
+
 @app.route('/mine', methods=['POST'])
 def get_post_body():
     body = request.get_data()

@@ -118,9 +118,8 @@ if __name__ == '__main__':
     # print(repr(pk))
     # print(repr(pk2))
     # print(pk2 == pk)
-
-
-
+    print(sk)
+    print(pk)
 
     text = "this is a test"
     print(len("mx6zfk6c++3/dTGNkTJiRTXyj+8/k9kU47Zg2umsySqgVpWAklS1o7l8yQIDAQAB"))
