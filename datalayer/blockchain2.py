@@ -150,28 +150,23 @@ class Blockchain:
     # 如果文件不存在则创建新文件。'w+'模式表示可读写，如果文件已存在则清空文件内容
     def update_votepool(self, processed_votedata):
         try:
-            # Open and read the existing votes from the vote pool
-            with open(self.votefile_path, 'r', newline='', encoding='UTF-8') as file:
+            # Open the file and read the existing votes
+            with open(self.votefile_path, 'r+', newline='', encoding='UTF-8') as file:
                 existing_votes = list(csv.reader(file))
 
-            # Convert each vote in processed_votedata to its CSV row format for comparison
-            processed_rows = [
-                [vote['Voter Public Key'].strip(), vote['Candidate'].strip(), vote['TimeStamp'].strip()]
-                for vote in processed_votedata
-            ]
+                # Convert each vote in processed_votedata to its CSV row format for comparison
+                processed_rows = [
+                    [vote['Voter Public Key'].strip(), vote['Candidate'].strip(), vote['TimeStamp'].strip()]
+                    for vote in processed_votedata
+                ]
 
-            # Strip whitespace from existing_votes for accurate comparison
-            existing_votes = [[item.strip() for item in row] for row in existing_votes]
+                # Prepare the remaining votes that were not processed in the current block
+                remaining_votes = [vote for vote in existing_votes if vote not in processed_rows]
 
-            # Filter out the processed votes from existing_votes
-            remaining_votes = [vote for vote in existing_votes if vote not in processed_rows]
-
-            # Write the unprocessed votes back to the vote pool
-            with open(self.votefile_path, 'w', newline='', encoding='UTF-8') as file:
+                # Clear and rewrite the file with only unprocessed votes
+                file.seek(0)
+                file.truncate()
                 csv.writer(file).writerows(remaining_votes)
-
-            with open(self.votefile_path, 'w', newline='') as f:
-                f.truncate(0)  # 清空文件内容
 
         except Exception as e:
             print(f'[{current_thread().name}] Error updating votefile.csv: {e}')
@@ -252,6 +247,10 @@ class Blockchain:
     #         # append_random_votes(self.votefile_path, num_votes=10)
     #         print(f"[{current_thread().name}] No mining needed at this time.")
     #     return
+    def total_votes_in_chain(self):
+            """Calculate the total number of votes across all blocks in the chain."""
+            return sum(block.number_of_votes for block in self.chain)
+
     def mine_if_needed(self):
         while True:
             # Check if the total votes in the chain reached max_votes
@@ -272,29 +271,28 @@ class Blockchain:
             #     print(f"[{current_thread().name}] Maximum time exceeded. Stopping the mining thread.")
             #     break
 
-            if self.should_mine():
-                if os.path.exists(self.votefile_path) == False:
-                    print("this votefile has been deleted")
-                    break
-                total_votes = self.count_total_votes_in_pool()
-                blocks_to_mine, _ = self.calculate_block_distribution(total_votes)
+            current_votes = self.count_total_votes_in_pool()
+            print(f"[{current_thread().name}] Current total votes in pool: {current_votes}")
+            if current_votes == 0:
+                print(f"[{current_thread().name}] No votes to process. Exiting...")
+                break
 
-                while total_votes > 0 and blocks_to_mine > 0:
-                    votes_per_block = min(Blockchain.MAX_VOTES_PER_BLOCK, total_votes)
+            if self.total_votes_in_chain() < self.max_votes:
+                blocks_to_mine, votes_per_block = self.calculate_block_distribution(current_votes)
+                print(f"[{current_thread().name}] Blocks to mine: {blocks_to_mine}, Votes per block: {votes_per_block}")
+                while blocks_to_mine > 0 and current_votes > 0:
                     print(f"[{current_thread().name}] Mining a block with {votes_per_block} votes...")
-
                     new_block = Block()
                     new_block.mineblock(self, votes_per_block)
-
-                    total_votes = self.count_total_votes_in_pool()  # Update the total votes after mining a block
-                    blocks_to_mine -= 1  # Decrement the number of blocks to mine
-
-                    print(f"[{current_thread().name}] Block mined. {total_votes} votes remaining, {blocks_to_mine} blocks to mine.")
+                    current_votes = self.count_total_votes_in_pool()  # Recheck the remaining votes in the pool
+                    blocks_to_mine -= 1
+                    print(f"[{current_thread().name}] Block mined. {current_votes} votes remaining, {blocks_to_mine} blocks to mine.")
+                print(f"[{current_thread().name}] Mining cycle complete. Rechecking conditions...")
             else:
-                time.sleep(BLOCK_TIME_LIMIT)
-                # Uncomment if need add votes
-                # append_random_votes(self.votefile_path, num_votes=10)
-                print(f"[{current_thread().name}] No mining needed at this time.")
+                print(f"[{current_thread().name}] Reached maximum votes or no more votes to process. Exiting...")
+                break
+
+            time.sleep(BLOCK_TIME_LIMIT)  # Simulate time delay for block processing
 
 
     def should_mine(self):
@@ -363,6 +361,7 @@ class Block:
     def load_data(self, blockchain_instance, votes_per_block):
         votelist = []
         votecount = {}
+        processed_votes = []  # List to track processed votes for later removal from the vote pool
 
         count = 0
         try:
@@ -370,33 +369,22 @@ class Block:
                 csvreader = csv.reader(votepool)
                 for row in csvreader:
                     if count >= votes_per_block:
-                        break  # Stop reading once the required number of votes is loaded
+                        break  # Only load the number of votes necessary for one block
 
-                    # Ensure we only extract the expected three values, handle extra values
                     try:
                         voter_pub_key, candidate, timestamp = row[:3]
+                        votelist.append({'Voter Public Key': voter_pub_key.strip(), 'Candidate': candidate.strip(), 'TimeStamp': timestamp.strip()})
+                        votecount[candidate] = votecount.get(candidate, 0) + 1
+                        processed_votes.append(row)
+                        count += 1
                     except ValueError as e:
                         print(f"[{current_thread().name}] Error unpacking row: {row} - {e}")
-                        continue
-
-                    votelist.append({'Voter Public Key': voter_pub_key.strip(), 'Candidate': candidate.strip(), 'TimeStamp': timestamp.strip()})
-
-                    # Count votes per candidate
-                    if candidate in votecount:
-                        votecount[candidate] += 1
-                    else:
-                        votecount[candidate] = 1
-
-                    count += 1
 
         except (IOError, IndexError) as e:
             print(f'[{current_thread().name}] Error reading votefile.csv: {e}')
 
-        finally:
-            if count > 0:
-                blockchain_instance.update_votepool(votelist)  # Ensure this updates the file correctly, removing only processed votes
+        return votelist, votecount, processed_votes
 
-        return votelist, votecount, count
 
     #--create a merkle tree of vote transactions and return the merkle root of the tree
     def merkleRoot(self):
