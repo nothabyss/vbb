@@ -148,33 +148,66 @@ class Blockchain:
 
     # --to clear up the votepool after a block has been mined...
     # 如果文件不存在则创建新文件。'w+'模式表示可读写，如果文件已存在则清空文件内容
-    def update_votepool(self, processed_votedata):
-        try:
-            # Open and read the existing votes from the vote pool
-            with open(self.votefile_path, 'r', newline='', encoding='UTF-8') as file:
-                existing_votes = list(csv.reader(file))
+    # def update_votepool(self, processed_votedata):
+    #     try:
+    #         # Open and read the existing votes from the vote pool
+    #         with open(self.votefile_path, 'r', newline='', encoding='UTF-8') as file:
+    #             existing_votes = list(csv.reader(file))
+    #
+    #         # Convert each vote in processed_votedata to its CSV row format for comparison
+    #         processed_rows = [
+    #             [vote['Voter Public Key'].strip(), vote['Candidate'].strip(), vote['TimeStamp'].strip()]
+    #             for vote in processed_votedata
+    #         ]
+    #
+    #         # Strip whitespace from existing_votes for accurate comparison
+    #         existing_votes = [[item.strip() for item in row] for row in existing_votes]
+    #
+    #         # Filter out the processed votes from existing_votes
+    #         remaining_votes = [vote for vote in existing_votes if vote not in processed_rows]
+    #
+    #         # Write the unprocessed votes back to the vote pool
+    #         with open(self.votefile_path, 'w', newline='', encoding='UTF-8') as file:
+    #             csv.writer(file).writerows(remaining_votes)
+    #
+    #         with open(self.votefile_path, 'w', newline='') as f:
+    #             f.truncate(0)  # 清空文件内容
+    #
+    #     except Exception as e:
+    #         print(f'[{current_thread().name}] Error updating votefile.csv: {e}')
+    def update_votepool2(self, n):
 
-            # Convert each vote in processed_votedata to its CSV row format for comparison
-            processed_rows = [
-                [vote['Voter Public Key'].strip(), vote['Candidate'].strip(), vote['TimeStamp'].strip()]
-                for vote in processed_votedata
-            ]
+        input_file = self.votefile_path
+        output_file = self.votefile_path
+        # 如果输出文件与输入文件相同，则使用临时文件
+        if output_file == input_file:
+            temp_file = 'temp_output.csv'
+        else:
+            temp_file = output_file
 
-            # Strip whitespace from existing_votes for accurate comparison
-            existing_votes = [[item.strip() for item in row] for row in existing_votes]
+        with open(input_file, 'r', newline='') as csv_in, open(temp_file, 'w', newline='') as csv_out:
+            reader = csv.reader(csv_in)
+            writer = csv.writer(csv_out)
 
-            # Filter out the processed votes from existing_votes
-            remaining_votes = [vote for vote in existing_votes if vote not in processed_rows]
+            # 跳过前n行
+            for _ in range(n):
+                next(reader, None)
 
-            # Write the unprocessed votes back to the vote pool
-            with open(self.votefile_path, 'w', newline='', encoding='UTF-8') as file:
-                csv.writer(file).writerows(remaining_votes)
+                # 写入剩余的行
+            for row in reader:
+                writer.writerow(row)
 
-            with open(self.votefile_path, 'w', newline='') as f:
-                f.truncate(0)  # 清空文件内容
+                # 如果输出文件与输入文件相同，则替换原始文件
+        if output_file == input_file:
+            # 先删除原始文件，防止替换失败（例如，如果新文件与旧文件大小不同）
+            try:
+                os.remove(input_file)
+            except FileNotFoundError:
+                pass
+                # 然后重命名临时文件为原始文件名
+            os.rename(temp_file, input_file)
 
-        except Exception as e:
-            print(f'[{current_thread().name}] Error updating votefile.csv: {e}')
+            # 使用示例
 
     def is_votepool_empty(self):
         my_path = self.votefile_path
@@ -209,9 +242,9 @@ class Blockchain:
 
         return True
 
-    # def total_votes_in_chain(self):
-    #     total_votes = sum(block.number_of_votes for block in self.chain)
-    #     return total_votes
+    def total_votes_in_chain(self):
+        total_votes = sum(block.number_of_votes for block in self.chain)
+        return total_votes
     #
     # def elapsed_time_exceeded(self):
     #     elapsed_time = time.time() - self.start_time
@@ -255,15 +288,10 @@ class Blockchain:
     def mine_if_needed(self):
         while True:
             # Check if the total votes in the chain reached max_votes
-            # if self.total_votes_in_chain() >= self.max_votes:
-            #     print(f"[{current_thread().name}] Maximum number of votes reached. Stopping the mining thread.")
-            #
-            #     votefile_path = self.votefile_path
-            #     os.remove(votefile_path)
-            #
-            #     print(self.total_votes_in_chain())
-            #     print(self.max_votes)
-            #     return
+            if self.total_votes_in_chain() >= self.max_votes:
+                print(f"[{current_thread().name}] Maximum number of votes reached. Stopping the mining thread.")
+                self.display()
+                return
 
             # # Check if the elapsed time has exceeded max_days
             # if self.elapsed_time_exceeded():
@@ -277,10 +305,10 @@ class Blockchain:
                     print("this votefile has been deleted")
                     break
                 total_votes = self.count_total_votes_in_pool()
-                blocks_to_mine, _ = self.calculate_block_distribution(total_votes)
+                blocks_to_mine, votes_per_block = self.calculate_block_distribution(total_votes)
 
-                while total_votes > 0 and blocks_to_mine > 0:
-                    votes_per_block = min(Blockchain.MAX_VOTES_PER_BLOCK, total_votes)
+                while total_votes > 0 and blocks_to_mine > 0 and self.total_votes_in_chain() < self.max_votes:
+                    votes_per_block = min(Blockchain.MAX_VOTES_PER_BLOCK, votes_per_block, total_votes, self.max_votes-self.total_votes_in_chain())
                     print(f"[{current_thread().name}] Mining a block with {votes_per_block} votes...")
 
                     new_block = Block()
@@ -392,9 +420,9 @@ class Block:
         except (IOError, IndexError) as e:
             print(f'[{current_thread().name}] Error reading votefile.csv: {e}')
 
-        finally:
-            if count > 0:
-                blockchain_instance.update_votepool(votelist)  # Ensure this updates the file correctly, removing only processed votes
+        # finally:
+        #     if count > 0:
+        #         blockchain_instance.update_votepool(votelist)  # Ensure this updates the file correctly, removing only processed votes
 
         return votelist, votecount, count
 
@@ -426,7 +454,7 @@ class Block:
 
     def mineblock(self, blockchain_instance, votes_per_block):
         # Assume that the total votes and blocks needed are already calculated
-
+        print("我是挖了一次矿")
         # Set the height and previous hash for the new block
         self.height = len(blockchain_instance.chain)
         self.prevHash = blockchain_instance.chain[-1].hash if self.height > 0 else '0'
@@ -435,7 +463,8 @@ class Block:
         self.votedata, self.votecount, self.number_of_votes = Block.load_data(self, blockchain_instance, votes_per_block)
 
         # Update the vote pool by removing the votes that are now loaded into the block
-        blockchain_instance.update_votepool(self.votedata)
+        # blockchain_instance.update_votepool(self.votedata)
+        blockchain_instance.update_votepool2(self.number_of_votes)
 
         # Calculate the Merkle root for the vote data (implement this function if necessary)
         self.merkle = self.merkleRoot()
@@ -454,8 +483,8 @@ class Block:
         chain_file_path = os.path.join(blockchain_instance.chain_folder, f'block-{self.height}.dat')
         with open(chain_file_path, 'wb') as file:
             pickle.dump(self, file)
-        if blockchain_instance.count_total_votes_in_pool() == 0:
-            blockchain_instance.display()
+        # if blockchain_instance.count_total_votes_in_pool() == 0:
+        #     blockchain_instance.display()
         # Append the mined block to the blockchain
         return self  # Return the mined block
 

@@ -1,5 +1,5 @@
 import unittest
-from blockchain2 import Blockchain, Block
+from vbb.datalayer.blockchain2 import Block
 
 
 class TestBlockChain(unittest.TestCase):

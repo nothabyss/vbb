@@ -6,7 +6,7 @@
 '''
 import os
 import time
-from threading import Thread, Lock
+from threading import Thread
 from datalayer.blockchain2 import Blockchain
 
 PROJECT_PATH = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
