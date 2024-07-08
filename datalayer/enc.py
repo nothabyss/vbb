@@ -136,10 +136,15 @@ if __name__ == '__main__':
     # sk, pk = rsa_original_keys()
     # print(sk)
     # print(pk)
-    pk = 'MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDR2JvM5cAzbKF7tCPMnpVLE7RlDEpj2DnJQSc7Xwrysy9V+N/l0jEkqfGwDBcvlkxiGxOtjpp4xgBTjjPGTJngrgAVFuyw8jEpUUdsxYap93ijv1tSrvhjnhW8dqu5n0MC0XrTciE6qzWfdl/ktQHFQd54W7j2x3usZiZufKZwOwIDAQAB'
-    Signature = 'XPdlT5AUtjD//jTk160s5TCdt9Q9PAVmEbbOaVO5HWL/C3XDDj9mPjEsb14AxwtTBIKUpZe/Tb8/c0tz6Jb2wYMMA5KrhSdTZ2bYjs96LW+ou8OK+VapL2uXQ1x7o3TbDIshf91DirS7OselKSEYYRkCElnvjIyl29DylM2rHk8='
-    text = "123"
-    print(len("mx6zfk6c++3/dTGNkTJiRTXyj+8/k9kU47Zg2umsySqgVpWAklS1o7l8yQIDAQAB"))
+
+    sk = 'MIICXAIBAAKBgQCSIykCiLamqauw10eAkuYxZSt8Gs9QInooqEpRGOtuyMx1NSietOOQgxyNwlKfRyjMGQPhgOEXEN8R+UesCNoP1OjcH8tQWDu2mIYdcj1nyn43TWswMOG7Jsi9+QT6mhVEiyi/SvjpG2F195mUEubjpJg+MdcgeddnvEMqz6k2bQIDAQABAoGAAuiEuSpv2h6/zjfmkiI6Rwrgo+pjrFBXVoZM3lLM4qpH2WBKs+fdLIPTdmXC360anH818s+uCxe4nMK1gLC3aDgMMPUEjWZRVa/pu6qUMaF+4FJAC9RCp5AwCquvJezy3mYOoTPwzP0xZ9Ox7gKu128tHwXJGF+3QF+LeZyO+WECQQC6vpR44kdzsZBLonSAyPCWAMWS6AH0f3Fp8YeNV+w2FVJ0kqLJi4GHdpMfyCq8fuTDmsLpMWag/dz65JLvHtPNAkEAyFVc28HX/r8L5qRxFsaeCBR4OugNvX3Aw6QPXYe9v8CsxDES0y2HYGoSkZjXk5OxvJ4+/qBMBAHPsKqSkiiNIQJABhbazopKXCppEx5MADsNJUcHKkAoeCmDsDmw+tnoGOdfFfAGIN5Mrfce2wVy50yX9wzf2CzFNPCyOPglFmkB7QJAUQR0sUsLlzKcFYKbWaKpdosQtIH0TJX2xygqLqEe09WQCSfvfQgEn7FGISu2wzAPyUAWKdOZ6mTxIXlaHVHZAQJBAIpW7sRKRNJlWycgxqe5ayzMi96W1/VrtF6qb4/FR+75qzUlSQGTdS2iSlxbftdtHmDmfRYDjqWCHlEvsiJi1Lw='
+    sig = digital_sign(sk, "99")
+    print(sig)
+    pk = 'MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCSIykCiLamqauw10eAkuYxZSt8Gs9QInooqEpRGOtuyMx1NSietOOQgxyNwlKfRyjMGQPhgOEXEN8R+UesCNoP1OjcH8tQWDu2mIYdcj1nyn43TWswMOG7Jsi9+QT6mhVEiyi/SvjpG2F195mUEubjpJg+MdcgeddnvEMqz6k2bQIDAQAB'
+    pk = 'MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQC7OkVLBew+Plf19UfD+XMxHfYHhuyAnamrfKyXYZCfC6b1gp6LeoANU5rkG8TVQb6sOwhCCoce+cUoX95RJ5hsRlBOBFHBVziHqxPPIK3GmEWotM8RgJAQ/kK47mG3CNWzKXuH3rYozyksWx7bgR9gEbe1NYztqRZRdMcdAtXqvQIDAQAB'
+    Signature = 'Qi9GVFU/VP0xAYnUnFt7ew/vjeFvQ5bb/Es1+4of4isPzKKvvApt4LhgiA9K3VglsYxA9TZ4kgNWyquqx4z8LEbgkncqW7BOlTk2HhmGmLn0n3Cnw2oDgXT8/EA64PlHJ4NnQx1dI6k2KSsuFkjYoN73NuJ3X3bdPf6luPc0PIg='
+    text = "99"
+
     # en = encrypt(pk, text)
     # de = decrypt(sk, en)
     # ds = digital_sign(sk, text)

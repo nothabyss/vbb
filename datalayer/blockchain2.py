@@ -7,30 +7,20 @@ import sys
 import os
 import math
 
-# --project files
 
-
-# --path of project files
 PROJECT_PATH = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(PROJECT_PATH)
 
 
-# Global lock for thread safety
 
-
-# --<<Global variables>>
-# --cryptographic difficulty
 DIFFICULTY = 3
 
-# --frequency of mining of blocks seconds
+
 BLOCK_TIME_LIMIT = 3
 
 
 class Blockchain:
-    # --holds the info of chain of blocks as objects
 
-
-    # Fixed maximum votes per block
     MAX_VOTES_PER_BLOCK = 50
 
     def __init__(self, vote_activity_id, initiator_puk, max_votes, max_days, votefile_path, new_chain=True, chain=None):
@@ -59,14 +49,6 @@ class Blockchain:
             os.makedirs(folder_path)
         return folder_path
 
-    # def load_blockchain(self):
-    #     chain_file_path = os.path.join(self.chain_folder, 'blockchain.dat')
-    #     try:
-    #         with open(chain_file_path, 'rb') as file:
-    #             self.chain = pickle.load(file)
-    #             print(f"[{current_thread().name}] Blockchain loaded successfully.")
-    #     except FileNotFoundError:
-    #         print(f"[{current_thread().name}] No existing blockchain found in {self.chain_folder}. Starting new.")
 
     def identify_existing_chain_folder(self):
         chains_path = os.path.join(PROJECT_PATH, 'records/chains')
@@ -88,9 +70,6 @@ class Blockchain:
     # --genesis block creation has nothing to do with blockchain class,
     # --..but has to be created when blockchain is initialized
     def add_genesis(self, vote_activity_id, initiator_puk):
-        print("****************************")
-        print(self.chain)
-        print("****************************")
         genesis = GenesisBlock(vote_activity_id, initiator_puk)
         self.chain.append(genesis)
         # Save the genesis block in the designated chain folder
@@ -146,35 +125,7 @@ class Blockchain:
             print(f'[{current_thread().name}] Block Hash: {block.hash}')
             print(f'[{current_thread().name}] Nonce: {block.nonce}\n\t\t|\n\t\t|')
 
-    # --to clear up the votepool after a block has been mined...
-    # 如果文件不存在则创建新文件。'w+'模式表示可读写，如果文件已存在则清空文件内容
-    # def update_votepool(self, processed_votedata):
-    #     try:
-    #         # Open and read the existing votes from the vote pool
-    #         with open(self.votefile_path, 'r', newline='', encoding='UTF-8') as file:
-    #             existing_votes = list(csv.reader(file))
-    #
-    #         # Convert each vote in processed_votedata to its CSV row format for comparison
-    #         processed_rows = [
-    #             [vote['Voter Public Key'].strip(), vote['Candidate'].strip(), vote['TimeStamp'].strip()]
-    #             for vote in processed_votedata
-    #         ]
-    #
-    #         # Strip whitespace from existing_votes for accurate comparison
-    #         existing_votes = [[item.strip() for item in row] for row in existing_votes]
-    #
-    #         # Filter out the processed votes from existing_votes
-    #         remaining_votes = [vote for vote in existing_votes if vote not in processed_rows]
-    #
-    #         # Write the unprocessed votes back to the vote pool
-    #         with open(self.votefile_path, 'w', newline='', encoding='UTF-8') as file:
-    #             csv.writer(file).writerows(remaining_votes)
-    #
-    #         with open(self.votefile_path, 'w', newline='') as f:
-    #             f.truncate(0)  # 清空文件内容
-    #
-    #     except Exception as e:
-    #         print(f'[{current_thread().name}] Error updating votefile.csv: {e}')
+
     def update_votepool2(self, n):
 
         input_file = self.votefile_path
@@ -214,77 +165,11 @@ class Blockchain:
         # The file is considered empty if it doesn't exist or has no content
         return not os.path.isfile(my_path) or os.stat(my_path).st_size == 0
 
-    """
-    After regular intervals, we need to verify that the blockchain
-    is indeed valid at all points. And no data has been tampered - EVEN IN ONE SINGLE COPY
-    (if not for the whole network).
-    We do that by verifying the chain of block hashes.
-    """
-    '每间隔一定的时间，验证区块链有没有别篡改'
-    @classmethod
-    def verify_chain(cls):
-        index, conclusion = ver.sync_blocks(cls.chain)
-        if not conclusion:
-            if len(str(index)) == 1:
-                error_msg ="""+-----------------------------------------+
-|                                         |
-| Somebody messed up at Block number - {}  |
-|                                         |
-+-----------------------------------------+""".format(index)
-            else:
-                error_msg ="""+-----------------------------------------+
-|                                         |
-| Somebody messed up at Block number - {} |
-|                                         |
-+-----------------------------------------+""".format(index)
-
-            raise Exception(error_msg)
-
-        return True
 
     def total_votes_in_chain(self):
         total_votes = sum(block.number_of_votes for block in self.chain)
         return total_votes
-    #
-    # def elapsed_time_exceeded(self):
-    #     elapsed_time = time.time() - self.start_time
-    #     return elapsed_time > self.max_days
 
-    # def mine_if_needed(self):
-    #
-    #         # Check if the total votes in the chain reached max_votes
-    #     if self.total_votes_in_chain() >= self.max_votes:
-    #         print(f"[{current_thread().name}] Maximum number of votes reached. Stopping the mining thread.")
-    #         print(self.total_votes_in_chain())
-    #         print(self.max_votes)
-    #         return
-    #
-    #     # Check if the elapsed time has exceeded max_days
-    #     if self.elapsed_time_exceeded():
-    #         print(f"[{current_thread().name}] Maximum time exceeded. Stopping the mining thread.")
-    #
-    #
-    #     if self.should_mine():
-    #         total_votes = self.count_total_votes_in_pool()
-    #         blocks_to_mine, _ = self.calculate_block_distribution(total_votes)
-    #
-    #         while total_votes > 0 and blocks_to_mine > 0:
-    #             votes_per_block = min(Blockchain.MAX_VOTES_PER_BLOCK, total_votes)
-    #             print(f"[{current_thread().name}] Mining a block with {votes_per_block} votes...")
-    #
-    #             new_block = Block()
-    #             new_block.mineblock(self, votes_per_block)
-    #
-    #             total_votes = self.count_total_votes_in_pool()  # Update the total votes after mining a block
-    #             blocks_to_mine -= 1  # Decrement the number of blocks to mine
-    #
-    #             print(f"[{current_thread().name}] Block mined. {total_votes} votes remaining, {blocks_to_mine} blocks to mine.")
-    #     else:
-    #         time.sleep(BLOCK_TIME_LIMIT)
-    #         # Uncomment if need add votes
-    #         # append_random_votes(self.votefile_path, num_votes=10)
-    #         print(f"[{current_thread().name}] No mining needed at this time.")
-    #     return
     def mine_if_needed(self):
         while True:
             # Check if the total votes in the chain reached max_votes
@@ -359,10 +244,7 @@ class Blockchain:
 
 
 class Block:
-    """
-    The basic structure of block that will be created when the block is generated
-    the data in the block will be updated later and block will be mined then.
-    """
+
     def __init__(self, height=0, votes=0, merkle='0',  timeStamp=0, prevHash='0', representative_pow=0, hash='Genesis'):
 
         self.height = height  # len(Blockchain.chain-1)
@@ -453,39 +335,32 @@ class Block:
         return vote_hashes[0]  # Return the Merkle root and all nodes
 
     def mineblock(self, blockchain_instance, votes_per_block):
-        # Assume that the total votes and blocks needed are already calculated
-        print("我是挖了一次矿")
-        # Set the height and previous hash for the new block
+
+
         self.height = len(blockchain_instance.chain)
         self.prevHash = blockchain_instance.chain[-1].hash if self.height > 0 else '0'
 
-        # Load vote data and count into the block based on votes_per_block
         self.votedata, self.votecount, self.number_of_votes = Block.load_data(self, blockchain_instance, votes_per_block)
 
-        # Update the vote pool by removing the votes that are now loaded into the block
-        # blockchain_instance.update_votepool(self.votedata)
+
         blockchain_instance.update_votepool2(self.number_of_votes)
 
-        # Calculate the Merkle root for the vote data (implement this function if necessary)
         self.merkle = self.merkleRoot()
 
-        # Set the block's difficulty and timestamp
+
         self.DIFFICULTY = DIFFICULTY
         self.timeStamp = time.time()
 
-        # Perform the proof-of-work to find the nonce
         self.nonce = self.representative_pow()
 
-        # Calculate the block's hash with the nonce found
+
         self.hash = self.calcHash()
 
         blockchain_instance.chain.append(self)
         chain_file_path = os.path.join(blockchain_instance.chain_folder, f'block-{self.height}.dat')
         with open(chain_file_path, 'wb') as file:
             pickle.dump(self, file)
-        # if blockchain_instance.count_total_votes_in_pool() == 0:
-        #     blockchain_instance.display()
-        # Append the mined block to the blockchain
+
         return self  # Return the mined block
 
 
